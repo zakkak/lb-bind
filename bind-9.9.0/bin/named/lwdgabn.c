@@ -232,6 +232,7 @@ generate_reply(ns_lwdclient_t *client) {
 	else
 		client->pkt.result = LWRES_R_NOTFOUND;
 
+  //ZAKKAK how is the sorting done?
 	sort_addresses(client);
 
 	lwres = lwres_gabnresponse_render(cm->lwctx, &client->gabn,

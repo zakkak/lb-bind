@@ -228,6 +228,7 @@ struct dns_adblameinfo {
 	ISC_LINK(dns_adblameinfo_t)     plink;
 };
 
+// ZAKKAK FOUND IT
 /*%
  * An address entry.  It holds quite a bit of information about addresses,
  * including edns state (in "flags"), rtt, and of course the address of

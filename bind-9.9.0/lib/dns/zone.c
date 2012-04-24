@@ -1707,7 +1707,6 @@ zone_asyncload(isc_task_t *task, isc_event_t *event) {
 	dns_zone_idetach(&zone);
 }
 
-// ZAKKAK 
 isc_result_t
 dns_zone_asyncload(dns_zone_t *zone, dns_zt_zoneloaded_t done, void *arg) {
 	isc_event_t *e;
