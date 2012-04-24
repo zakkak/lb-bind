@@ -424,7 +424,6 @@ dns_zt_apply(dns_zt_t *zt, isc_boolean_t stop,
 	return (dns_zt_apply2(zt, stop, NULL, action, uap));
 }
 
-// ZAKKAK 
 isc_result_t
 dns_zt_apply2(dns_zt_t *zt, isc_boolean_t stop, isc_result_t *sub,
 	      isc_result_t (*action)(dns_zone_t *, void *), void *uap)

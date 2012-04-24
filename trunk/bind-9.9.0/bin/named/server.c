@@ -5508,7 +5508,7 @@ ns_server_create(isc_mem_t *mctx, ns_server_t **serverp) {
 	server->reload_event =
 		isc_event_allocate(ns_g_mctx, server,
 				   NS_EVENT_RELOAD,
-				   ns_server_reload,
+       ns_server_reload    ,
 				   server,
 				   sizeof(isc_event_t));
 	CHECKFATAL(server->reload_event == NULL ?
