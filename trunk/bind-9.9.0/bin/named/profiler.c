@@ -4,6 +4,23 @@
  * Author: zakkak@csd.uoc.gr
  */
 
+typedef struct a_node{
+  isc_sockaddr_t sockaddr; // worker's sockaddr
+  uint8_t cpu_load, io_load, net_load; // Load percentages
+} a_node_t;
+
+typedef struct ht_node_v{
+  dns_adbnamehooklist_t orig_addresses;
+  a_node_t *addr_stats[LWRES_MAX_ADDRS];
+} ht_node_v_t;
+
+typedef struct ht_node{
+  char* key;
+  ht_node_v value;
+} ht_node_t;
+
+hashtable ht_g; // mapping names to ht_nodes
+
 void profiler_init()
 {
   dns_zone_t **zonep
@@ -90,7 +107,7 @@ void profiler_init()
     }
     adbname->last_used = now;
 
-    // iter through namehook
+    // iter through addresses
     namehook = ISC_LIST_HEAD(name->v4);
     while (namehook != NULL) {
       entry = namehook->entry;
@@ -114,6 +131,8 @@ void profiler_init()
   
 }
 
+
+// LOCK list before sorting
 void profiler_sort_addrs()
 {
   
