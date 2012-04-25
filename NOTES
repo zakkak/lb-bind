@@ -1,0 +1,4 @@
+* Worker script needs daemonise package to run as daemon
+	fron worker_cntrl script
+* Worker script needs sysstat package to run
+* to run as daemon execute 'ruby worker_cntrl.rb start'
