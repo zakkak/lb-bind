@@ -4,6 +4,17 @@
  * Author: zakkak@csd.uoc.gr
  */
 
+
+#include <stdlib.h>
+
+#include <lwres/lwres.h>
+#include <dns/name.h>
+#include <dns/rbt.h>
+#include <dns/fixedname.h>
+#include <dns/result.h>
+#include <dns/adb.h>
+#include <dns/db.h>
+
 // UPDATE_INTERVAL in seconds
 // TODO set TTL the same
 #define UPDATE_INTERVAL 60
