@@ -6,17 +6,25 @@ require 'daemons'
 puts "Starting up worker..."
 server = TCPServer.new(2113)
 
-#Daemons.daemonize
-
 while (session = server.accept)
 	Thread.start do
 	  puts "log: Connection from #{session.peeraddr[2]} at #{session.peeraddr[3]}"
 	  puts "log: got input from client"
 
-	  input = session.gets
-	  puts input #probably need to check message and checksum
-		puts Digest::MD5.hexdigest("REQSTATS\n")
-	  #session.puts "Server: Welcome #{session.peeraddr[2]}\n"
+	  req = session.recv(256)
+		profiler_message = (req.chomp).split("#")
+		request = profiler_message.shift
+		req_digest = profiler_message.shift
+		req_end = profiler_message.shift
+		#puts request
+		#puts req_digest.unpack('H*')	
+	 	check_digest = Digest::MD5.digest(request)
+		#puts check_digest.unpack('H*')
+		#close session if digests do not match
+		if(!(request.eql?("REQSTATS")) or req_digest != check_digest) 
+			session.close
+		end 
+		#session.puts "Server: Welcome #{session.peeraddr[2]}\n"
 		#get statistics
 		cpu_stats = `sar 1 1 | grep "Average"`
 		net_stats = `sar -n DEV 1 1 | grep "Average"`
@@ -35,7 +43,7 @@ while (session = server.accept)
 		timestamp = Time.now.utc.iso8601
 		message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
 		checksum = Digest::MD5.hexdigest(message)
-		message << "$#{checksum}"
+		message << "##{checksum}"
   	session.puts message
 		#puts "log: sending goodbye"
 		#session.puts "Server: Goodbye"	
