@@ -47,8 +47,30 @@ unsigned char *md5_digest(const char *input) {
 	return output;
 }
 
-void check_response(char *response) {
-	
+int check_response(char *response) {
+	char *timestamp;
+	double stats[3];
+	char *message = strtok(response, "#");
+	char *msg_digest = strtok(NULL, "#");
+	int i;	
+	//printf("message=%s\n", message);
+	//printf("?=%s", msg_digest);
+	//print2hex(msg_digest, 16);
+	char *digest = md5_digest(message);
+	//print2hex(digest, 16);
+	for(i=0; i < 16; i++) {
+		if(msg_digest[i] != digest[i])
+			return -1;
+	}
+	printf("checksum OK!\n");
+	stats[0] = atof(strtok(message, "$"));
+	for(i=1; i < 3; i++) {
+		stats[i] = atof(strtok(NULL, "$"));
+	}
+	timestamp = strtok(NULL, "$");	
+	printf("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
+	printf("timestamp=%s\n", timestamp);	
+	return 0;
 }
 
 int connectToServer(int sockfd, char* ip, int port ){
