@@ -6,70 +6,67 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include "global.h" 
-#include "md5.h"
+#include <openssl/evp.h>
 
 void error(const char *msg)
 {
     perror(msg);
     exit(0);
 }
-#if 0
-int main(int argc, char *argv[])
-{
-    int sockfd, portno, n;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
 
-    char buffer[256];
-    portno = 2113;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
-        error("ERROR opening socket");
-    server = gethostbyname("localhost");
-    if (server == NULL) {
-        fprintf(stderr,"ERROR, no such host\n");
-        exit(0);
-    }
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-         (char *)&serv_addr.sin_addr.s_addr,
-         server->h_length);
-    serv_addr.sin_port = htons(portno);
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-    bzero(buffer,256);
-		strcpy(buffer, "REQSTATS\n");
-    //fgets(buffer,255,stdin);
-    n = write(sockfd,buffer,strlen(buffer));
-    if (n < 0) 
-         error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0) 
-         error("ERROR reading from socket");
-    printf("%s\n",buffer);
-    close(sockfd);
-    return 0;
+void print2hex(unsigned const char* string, int size) {
+	int i;
+  for(i = 0; i < size; i++) printf("%02x", string[i]);
+  printf("\n");
 }
-#elif 1
+
+unsigned char *md5_digest(const char *input) {
+	EVP_MD_CTX mdctx;
+  const EVP_MD *md;
+  //char input[] = "REQSTATS";
+  unsigned char* output = (unsigned char*)malloc(sizeof(unsigned char)*16);
+  int output_len, i;
+
+  /* Initialize digests table */
+  OpenSSL_add_all_digests();
+  md = EVP_get_digestbyname("MD5");
+
+  if(!md) {
+  	printf("Unable to init MD5 digest\n");
+    exit(1);
+  }
+
+  EVP_MD_CTX_init(&mdctx);
+  EVP_DigestInit_ex(&mdctx, md, NULL);
+  EVP_DigestUpdate(&mdctx, input, strlen(input));
+  /* to add more data to hash, place additional calls to EVP_DigestUpdate here */
+  EVP_DigestFinal_ex(&mdctx, output, &output_len);
+  EVP_MD_CTX_cleanup(&mdctx);
+
+  /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */
+	return output;
+}
+
+void check_response(char *response) {
+	
+}
+
 int connectToServer(int sockfd, char* ip, int port ){
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	
-    server = gethostbyname(ip);
-    if (server == NULL) {
-        fprintf(stderr,"ERROR, no such host\n");
-        exit(0);
-    }
+  server = gethostbyname(ip);
+  if (server == NULL) {
+      fprintf(stderr,"ERROR, no such host\n");
+      exit(0);
+  }
 	
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-         (char *)&serv_addr.sin_addr.s_addr,
-         server->h_length);
-    serv_addr.sin_port = htons(port);
+  serv_addr.sin_family = AF_INET;
+  bcopy((char *)server->h_addr, 
+       (char *)&serv_addr.sin_addr.s_addr,
+       server->h_length);
+  serv_addr.sin_port = htons(port);
 
 	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
 		error("ERROR connecting");
@@ -78,11 +75,16 @@ int connectToServer(int sockfd, char* ip, int port ){
 	return 0;
 }
 
-char* sendMessage( char* message, int sockfd){
+char* sendMessage(char* orig_message, int sockfd){
 
 	int n;
 	char* response = (char*)malloc(256*sizeof(char));
-	
+	char* digest = md5_digest(orig_message);
+	char message[256];
+	bzero(message, 256);
+	strcpy(message, orig_message);
+	strcat(message, "#");
+	strcat(message, digest);
 	n = write(sockfd,message,strlen(message));
    
  	if (n < 0)
@@ -96,41 +98,19 @@ char* sendMessage( char* message, int sockfd){
 	return response;
 }
 
-/* Prints a message digest in hexadecimal.
- */
-static void MDPrint (unsigned char digest[16]) {
-  unsigned int i;
-
-  for (i = 0; i < 16; i++)
- printf ("%02x", digest[i]);
-}
-
-/* Digests a string and prints the result.
- */
-static void MDString (char* string) {
-  MD5_CTX context;
-  unsigned char digest[16];
-  unsigned int len = strlen (string);
-
-  MD5Init (&context);
-  MD5Update (&context, string, len);
-  MD5Final (digest, &context);
-
-  printf ("MD%d (\"%s\") = ", 5, string);
-  MDPrint (digest);
-  printf ("\n");
-}
-
 int main(int argc, char *argv[]) {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	char* ip = strdup("localhost");
 	int port = 2113;	
-	char* message = strdup("REQSTATS\n");
-	MDString(message);
+	char *response, *message = strdup("REQSTATS");
+	//MDString("REQSTATS");
 	if(connectToServer(sockfd, ip, port)) return 1;
-	message = sendMessage(message, sockfd);
-  printf("%s\n",message);
+	response = sendMessage(message, sockfd);
+	check_response(response);
+  //printf("%s\n",message);
   close(sockfd);
+	free(message);
+	free(response);
 	return 0;
 }
-#endif
+
