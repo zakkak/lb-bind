@@ -42,8 +42,10 @@ while (session = server.accept)
 
 		timestamp = Time.now.utc.iso8601
 		message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
-		checksum = Digest::MD5.hexdigest(message)
+		checksum = Digest::MD5.digest(message)
 		message << "##{checksum}"
+		#puts message
+		#puts checksum.unpack('H*')
   	session.puts message
 		#puts "log: sending goodbye"
 		#session.puts "Server: Goodbye"	
