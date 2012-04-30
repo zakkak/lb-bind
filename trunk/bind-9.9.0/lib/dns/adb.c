@@ -87,13 +87,9 @@
 #define FREE_ITEMS              64      /*%< free count for memory pools */
 #define FILL_COUNT              16      /*%< fill count for memory pools */
 
-#define DNS_ADB_INVALIDBUCKET (-1)      /*%< invalid bucket address */
-
 #define DNS_ADB_MINADBSIZE      (1024*1024)     /*%< 1 Megabyte */
 
 typedef ISC_LIST(dns_adbname_t) dns_adbnamelist_t;
-typedef struct dns_adbnamehook dns_adbnamehook_t;
-typedef ISC_LIST(dns_adbnamehook_t) dns_adbnamehooklist_t;
 typedef struct dns_adblameinfo dns_adblameinfo_t;
 typedef ISC_LIST(dns_adbentry_t) dns_adbentrylist_t;
 typedef struct dns_adbfetch dns_adbfetch_t;
