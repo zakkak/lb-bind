@@ -346,12 +346,12 @@ void profiler_init()
           value = (node_t *) malloc(sizeof(node_t));
 
           // find the adbname from name
-          bucket_name = dns_name_fullhash(name, ISC_FALSE) % adb->nnames;
+          bucket_name = dns_name_fullhash(foundname, ISC_FALSE) % adb->nnames;
           LOCK(&adb->namelocks[bucket_name]);
           value->key = ISC_LIST_HEAD(adb->names[bucket_name]);
           while (value->key != NULL) {
             if (!NAME_DEAD(value->key)) {
-              if (dns_name_equal(name, &value->key->name))
+              if (dns_name_equal(foundname, &value->key->name))
                 break;
             }
             value->key = ISC_LIST_NEXT(value->key, plink);
@@ -362,7 +362,7 @@ void profiler_init()
           value->next = list_g;
           list_g = value;
 
-          namehook = ISC_LIST_HEAD(foundname->v4);
+          namehook = ISC_LIST_HEAD(value->key->v4);
           // iter through addresses
           while (namehook != NULL) {
             entry = namehook->entry;
