@@ -232,6 +232,18 @@ typedef struct dns_rbtnodechain {
 	unsigned int            level_matches;
 } dns_rbtnodechain_t;
 
+
+struct dns_rbt {
+  unsigned int            magic;
+  isc_mem_t *             mctx;
+  dns_rbtnode_t *         root;
+  void                    (*data_deleter)(void *, void *);
+  void *                  deleter_arg;
+  unsigned int            nodecount;
+  unsigned int            hashsize;
+  dns_rbtnode_t **        hashtable;
+};
+
 /*****
  ***** Public interfaces.
  *****/

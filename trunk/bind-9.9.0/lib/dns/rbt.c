@@ -59,17 +59,6 @@
 #define RBT_HASH_SIZE 2 /*%< To give the reallocation code a workout. */
 #endif
 
-struct dns_rbt {
-	unsigned int            magic;
-	isc_mem_t *             mctx;
-	dns_rbtnode_t *         root;
-	void                    (*data_deleter)(void *, void *);
-	void *                  deleter_arg;
-	unsigned int            nodecount;
-	unsigned int            hashsize;
-	dns_rbtnode_t **        hashtable;
-};
-
 #define RED 0
 #define BLACK 1
 
