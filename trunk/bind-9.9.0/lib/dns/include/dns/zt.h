@@ -38,6 +38,20 @@ typedef isc_result_t
  * this signature.
  */
 
+struct dns_zt {
+  /* Unlocked. */
+  unsigned int    magic;
+  isc_mem_t   *mctx;
+  dns_rdataclass_t  rdclass;
+  isc_rwlock_t    rwlock;
+  dns_zt_allloaded_t  loaddone;
+  void *      loaddone_arg;
+  /* Locked by lock. */
+  isc_uint32_t    references;
+  unsigned int    loads_pending;
+  dns_rbt_t   *table;
+};
+
 typedef isc_result_t
 (*dns_zt_zoneloaded_t)(dns_zt_t *zt, dns_zone_t *zone, isc_task_t *task);
 /*%<

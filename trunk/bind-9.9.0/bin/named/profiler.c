@@ -35,6 +35,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <openssl/evp.h>
+#include <dns/zt.h>
 
 // UPDATE_INTERVAL in seconds
 // TODO set TTL the same
@@ -346,7 +347,7 @@ void profiler_init()
           value = (node_t *) malloc(sizeof(node_t));
 
           // find the adbname from name
-          bucket_name = dns_name_fullhash(foundname, ISC_FALSE) % adb->nnames;
+          bucket_name = dns_name_fullhash(&foundname, ISC_FALSE) % adb->nnames;
           LOCK(&adb->namelocks[bucket_name]);
           value->key = ISC_LIST_HEAD(adb->names[bucket_name]);
           while (value->key != NULL) {
