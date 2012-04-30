@@ -23,6 +23,16 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <openssl/evp.h>
+
 // UPDATE_INTERVAL in seconds
 // TODO set TTL the same
 #define UPDATE_INTERVAL 60
@@ -36,7 +46,8 @@
 typedef struct a_node {
 //   isc_sockaddr_t sa;      // worker's sockaddr
   dns_adbnamehook_t *nh;
-  uint8_t cpu_load, io_load, net_load;  // Load percentages
+  //uint8_t cpu_load, io_load, net_load;  // Load percentages
+	double cpu_load, io_load, net_load;
 } a_node_t;
 
 // typedef struct ht_node_v {
@@ -64,24 +75,160 @@ typedef struct node {
 
 node_t *list_g;
 
+/*** WORKER COMMUNICATION FUNCTIONS ***/
+
+void error(const char *msg)
+{
+    perror(msg);
+    exit(0);
+}
+
+void print2hex(unsigned const char* string, int size) {
+	int i;
+  for(i = 0; i < size; i++) printf("%02x", string[i]);
+  printf("\n");
+}
+
+unsigned char *md5_digest(const char *input) {
+	EVP_MD_CTX mdctx;
+  const EVP_MD *md;
+  //char input[] = "REQSTATS";
+  unsigned char* output = (unsigned char*)malloc(sizeof(unsigned char)*16);
+  int output_len, i;
+
+  /* Initialize digests table */
+  OpenSSL_add_all_digests();
+  md = EVP_get_digestbyname("MD5");
+
+  if(!md) {
+  	printf("Unable to init MD5 digest\n");
+    exit(1);
+  }
+
+  EVP_MD_CTX_init(&mdctx);
+  EVP_DigestInit_ex(&mdctx, md, NULL);
+  EVP_DigestUpdate(&mdctx, input, strlen(input));
+  /* to add more data to hash, place additional calls to EVP_DigestUpdate here */
+  EVP_DigestFinal_ex(&mdctx, output, &output_len);
+  EVP_MD_CTX_cleanup(&mdctx);
+
+  /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */
+	return output;
+}
+
+int parse_response(char *response, a_node_t *currnode) {
+	char *timestamp;
+	double stats[3];
+	char *message = strtok(response, "#");
+	char *msg_digest = strtok(NULL, "#");
+	int i;	
+	//printf("message=%s\n", message);
+	//printf("?=%s", msg_digest);
+	//print2hex(msg_digest, 16);
+	char *digest = md5_digest(message);
+	//print2hex(digest, 16);
+	for(i=0; i < 16; i++) {
+		if(msg_digest[i] != digest[i])
+			return -1;
+	}
+	printf("checksum OK!\n");
+	stats[0] = atof(strtok(message, "$"));
+	for(i=1; i < 3; i++) {
+		stats[i] = atof(strtok(NULL, "$"));
+	}
+	timestamp = strtok(NULL, "$");	
+	printf("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
+	printf("timestamp=%s\n", timestamp);
+	currnode->io_load = stat[0];
+	currnode->cpu_load = stat[1];
+	currnode->net_load = stat[2];	
+	return 0;
+}
+
+int connectToServer(int sockfd, char* ip, int port ){
+	struct sockaddr_in serv_addr;
+	struct hostent *server;
+	
+  server = gethostbyname(ip);
+  if (server == NULL) {
+      fprintf(stderr,"ERROR, no such host\n");
+      exit(0);
+  }
+	
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  bcopy((char *)server->h_addr, 
+       (char *)&serv_addr.sin_addr.s_addr,
+       server->h_length);
+  serv_addr.sin_port = htons(port);
+
+	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
+		error("ERROR connecting");
+		return 1;
+	}
+	return 0;
+}
+
+char* sendMessage(char* orig_message, int sockfd){
+
+	int n;
+	char* response = (char*)malloc(256*sizeof(char));
+	char* digest = md5_digest(orig_message);
+	char message[256];
+	bzero(message, 256);
+	strcpy(message, orig_message);
+	strcat(message, "#");
+	strcat(message, digest);
+	n = write(sockfd,message,strlen(message));
+   
+ 	if (n < 0)
+  	error("ERROR writing to socket");
+
+ 	bzero(response,256);
+	n = read(sockfd,response,255);
+  if (n < 0) 
+  	error("ERROR reading from socket");
+
+	return response;
+}
 
 
 static void profiler_poll_workers(node_t * cur)
 {
   int i;
   a_node_t *tmp;
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	char* ip;
+	char *response, *message = strdup("REQSTATS");
+	int port = 2113;	
 
   for (i = 0; i < cur->naddrs; ++i) {
     tmp = cur->addr_stats[i];
 
+		ip = inet_ntoa(((struct sockaddr_in)(tmp->nh->entry->sockaddr.type.sa)).sin_addr); //here i try to get the ip, not sure that's fine
+		if(connectToServer(sockfd, ip, port)) {
+			fprintf(stderr, "Could not connect to worker %s\n", ip);
+			close(sockfd);
+			return;
+		};
+		response = sendMessage(message, sockfd);
+		if(parse_response(response)) {
+			fprintf(stderr, "Could not read worker report\n");
+			//TODO:maybe handle this somehow?		
+		}
+		//printf("%s\n",message);
+		close(sockfd);
+		free(message);
+		free(response);
+		return;
+
     //TODO here do the communication and store the results
     // we can open and close the connection for each zone or keep it live for
     // the whole session
-//     tmp->cpu_load = ;
-//     tmp->io_load = ;
-//     tmp->net_load = ;
   }
 }
+
+/*** END OF WORKER COMMUNICATION ***/
 
 static int cmp(const void *v_a, const void *v_b)
 {
