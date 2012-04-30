@@ -87,6 +87,8 @@ ISC_LANG_BEGINDECLS
  *** Magic number checks
  ***/
 
+#define DNS_ADB_INVALIDBUCKET (-1)      /*%< invalid bucket address */
+
 #define DNS_ADBFIND_MAGIC	  ISC_MAGIC('a','d','b','H')
 #define DNS_ADBFIND_VALID(x)	  ISC_MAGIC_VALID(x, DNS_ADBFIND_MAGIC)
 #define DNS_ADBADDRINFO_MAGIC	  ISC_MAGIC('a','d','A','I')
@@ -98,6 +100,8 @@ ISC_LANG_BEGINDECLS
  ***/
 
 typedef struct dns_adbname		dns_adbname_t;
+typedef struct dns_adbnamehook dns_adbnamehook_t;
+typedef ISC_LIST(dns_adbnamehook_t) dns_adbnamehooklist_t;
 
 /*!
  *\brief

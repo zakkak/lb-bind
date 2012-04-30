@@ -8,12 +8,20 @@
 #include <stdlib.h>
 
 #include <lwres/lwres.h>
+
+#include <named/globals.h>
+
+#include <isc/util.h>
+
 #include <dns/name.h>
 #include <dns/rbt.h>
 #include <dns/fixedname.h>
 #include <dns/result.h>
 #include <dns/adb.h>
 #include <dns/db.h>
+
+#include <assert.h>
+#include <unistd.h>
 
 // UPDATE_INTERVAL in seconds
 // TODO set TTL the same
@@ -44,7 +52,7 @@ typedef struct a_node {
 // ht_hashtable_t ht_g;                 // mapping names to ht_nodes
 
 typedef struct node {
-  dns_name_t key;
+  dns_adbname_t *key;
   a_node_t *addr_stats[LWRES_MAX_ADDRS];
   int naddrs;
   struct node *next;
@@ -56,95 +64,9 @@ typedef struct node {
 
 node_t *list_g;
 
-void profiler_update_addrs();
 
-void profiler_init()
-{
-  int bucket;
-  isc_result_t result;
-  dns_view_t *view;
 
-  // For our book keeping
-  node_t *value;
-  //////////////////////////////////////////////////////////////////////////////
-
-  // For the rbt iterator
-  dns_name_t foundname, *origin;
-  dns_rbtnodechain_t chain;
-  dns_fixedname_t fixedorigin;
-
-  dns_rbtnodechain_init(&chain, mctx);
-
-  dns_name_init(&foundname, NULL);
-  dns_fixedname_init(&fixedorigin);
-  origin = dns_fixedname_name(&fixedorigin);
-  //////////////////////////////////////////////////////////////////////////////
-
-  dns_adb_t *adb;
-  dns_adbnamehook_t *namehook;
-  dns_adbentry_t *entry;
-
-  list_g = NULL;
-
-  assert((CPU + IO + NET) == 1.0f);
-
-  // Go through all views and initialize the hashtable
-  for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {
-    adb = view->adb;
-
-    // wait till load is complete
-    while (view->zonetable->loads_pending);
-
-    // lock the zonetable
-    RWLOCK(&zonetable->rwlock, isc_rwlocktype_read);
-    result = dns_rbtnodechain_first(&chain, view->zonetable->table, &foundname, origin);
-
-    if (result != ISC_R_SUCCESS && result != DNS_R_NEWORIGIN)
-      printf("start not found!\n");
-    else {
-      // now go through the zonetable and for each zone add a node to ht_g
-      for (;;) {
-        if (result == ISC_R_SUCCESS || result == DNS_R_NEWORIGIN) {
-
-          value = (node_t *) malloc(sizeof(node_t));
-          dns_name_clone(foundname, value->key);
-          value->naddrs = 0;
-          value->next = list_g;
-          list_g = value;
-
-          namehook = ISC_LIST_HEAD(foundname->v4);
-          // iter through addresses
-          while (namehook != NULL) {
-            entry = namehook->entry;
-            bucket = entry->lock_bucket;
-            LOCK(&adb->entrylocks[bucket]);
-
-            value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
-            memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
-//             memcpy(value->addr_stats[value->naddrs++]->sa, entry->sockaddr, sizeof(isc_sockaddr_t);
-            value->addr_stats[value->naddrs++]->nh = namehook;
-
-            UNLOCK(&adb->entrylocks[bucket]);
-            bucket = DNS_ADB_INVALIDBUCKET;
-            namehook = ISC_LIST_NEXT(namehook, plink);
-          }
-        } else {
-          if (result != ISC_R_NOMORE)
-            printf("UNEXEPCTED ITERATION ERROR: %s", dns_result_totext(result));
-          break;
-        }
-
-        result = dns_rbtnodechain_next(&chain, &foundname, origin);
-      }
-    }
-
-    RWUNLOCK(&zonetable->rwlock, isc_rwlocktype_read);
-  }
-
-  profiler_update_addrs();
-}
-
-void profiler_poll_workers(node_t * cur)
+static void profiler_poll_workers(node_t * cur)
 {
   int i;
   a_node_t *tmp;
@@ -161,13 +83,13 @@ void profiler_poll_workers(node_t * cur)
   }
 }
 
-int cmp(const void *v_a, const void *v_b)
+static int cmp(const void *v_a, const void *v_b)
 {
-  a_node_t *a, *b;
+  const a_node_t *a, *b;
   int s_a, s_b;
 
-  a = (a_node_t *) v_a;
-  b = (a_node_t *) v_b;
+  a = (const a_node_t *) v_a;
+  b = (const a_node_t *) v_b;
 
   s_a = CALC_LOAD(a);
   s_b = CALC_LOAD(b);
@@ -175,7 +97,7 @@ int cmp(const void *v_a, const void *v_b)
   return s_a - s_b;
 }
 
-void profiler_update_addrs()
+static void profiler_update_addrs()
 {
   node_t *current = list_g;
   int i, bucket;
@@ -196,7 +118,7 @@ void profiler_update_addrs()
       LOCK(&current->key->adb->namelocks[bucket]);
       list = &(current->key->v4);
       ISC_LIST_INIT(*list);
-      for (i = 0; i < cur->naddrs; ++i) {
+      for (i = 0; i < current->naddrs; ++i) {
         tmp = current->addr_stats[i]->nh;
         ISC_LIST_APPEND(*list, tmp, plink);
       }
@@ -205,4 +127,105 @@ void profiler_update_addrs()
       current = list_g->next;
     }
   }
+}
+
+void profiler_init()
+{
+  int bucket, bucket_name;
+  isc_result_t result;
+  dns_view_t *view;
+
+  // For our book keeping
+  node_t *value;
+  //////////////////////////////////////////////////////////////////////////////
+
+  dns_adb_t *adb;
+  dns_adbnamehook_t *namehook;
+  dns_adbentry_t *entry;
+
+  list_g = NULL;
+
+  assert((CPU + IO + NET) == 1.0f);
+
+  // Go through all views and initialize the hashtable
+  for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {
+    adb = view->adb;
+
+    // wait till load is complete
+    while (view->zonetable->loads_pending);
+
+    // For the rbt iterator
+    dns_name_t foundname, *origin;
+    dns_rbtnodechain_t chain;
+    dns_fixedname_t fixedorigin;
+
+    dns_rbtnodechain_init(&chain, view->zonetable->table->mctx);
+
+    dns_name_init(&foundname, NULL);
+    dns_fixedname_init(&fixedorigin);
+    origin = dns_fixedname_name(&fixedorigin);
+    //////////////////////////////////////////////////////////////////////////////
+
+    // lock the zonetable
+    RWLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
+    result = dns_rbtnodechain_first(&chain, view->zonetable->table, &foundname, origin);
+
+    if (result != ISC_R_SUCCESS && result != DNS_R_NEWORIGIN)
+      printf("start not found!\n");
+    else {
+      // now go through the zonetable and for each zone add a node to ht_g
+      for (;;) {
+        if (result == ISC_R_SUCCESS || result == DNS_R_NEWORIGIN) {
+
+          value = (node_t *) malloc(sizeof(node_t));
+          
+          // find the adbname from name
+          bucket_name = dns_name_fullhash(name, ISC_FALSE) % adb->nnames;
+          LOCK(&adb->namelocks[bucket_name]);
+          value->key = ISC_LIST_HEAD(adb->names[bucket_name]);
+          while (value->key != NULL) {
+            if (!NAME_DEAD(value->key)) {
+              if (dns_name_equal(name, &value->key->name))
+                break;
+            }
+            value->key = ISC_LIST_NEXT(value->key, plink);
+          }
+          assert(value->key);
+  
+          value->naddrs = 0;
+          value->next = list_g;
+          list_g = value;
+
+          namehook = ISC_LIST_HEAD(foundname->v4);
+          // iter through addresses
+          while (namehook != NULL) {
+            entry = namehook->entry;
+            bucket = entry->lock_bucket;
+            LOCK(&adb->entrylocks[bucket]);
+
+            value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
+            memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
+//             memcpy(value->addr_stats[value->naddrs++]->sa, entry->sockaddr, sizeof(isc_sockaddr_t);
+            value->addr_stats[value->naddrs++]->nh = namehook;
+
+            UNLOCK(&adb->entrylocks[bucket]);
+//             bucket = DNS_ADB_INVALIDBUCKET;
+            namehook = ISC_LIST_NEXT(namehook, plink);
+          }
+          
+          UNLOCK(&adb->namelocks[bucket_name]);
+        } else {
+          if (result != ISC_R_NOMORE)
+            printf("UNEXEPCTED ITERATION ERROR: %s", dns_result_totext(result));
+          break;
+        }
+
+        result = dns_rbtnodechain_next(&chain, &foundname, origin);
+      }
+    }
+
+    RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
+  }
+
+  profiler_update_addrs();
 }
