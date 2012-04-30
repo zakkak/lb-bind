@@ -89,75 +89,7 @@
 
 #define DNS_ADB_MINADBSIZE      (1024*1024)     /*%< 1 Megabyte */
 
-typedef ISC_LIST(dns_adbname_t) dns_adbnamelist_t;
-typedef ISC_LIST(dns_adbentry_t) dns_adbentrylist_t;
 typedef struct dns_adbfetch6 dns_adbfetch6_t;
-
-/*% dns adb structure */
-struct dns_adb {
-	unsigned int                    magic;
-
-	isc_mutex_t                     lock;
-	isc_mutex_t                     reflock; /*%< Covers irefcnt, erefcnt */
-	isc_mutex_t                     overmemlock; /*%< Covers overmem */
-	isc_mem_t                      *mctx;
-	dns_view_t                     *view;
-
-	isc_taskmgr_t                  *taskmgr;
-	isc_task_t                     *task;
-
-	isc_interval_t                  tick_interval;
-	int                             next_cleanbucket;
-
-	unsigned int                    irefcnt;
-	unsigned int                    erefcnt;
-
-	isc_mutex_t                     mplock;
-	isc_mempool_t                  *nmp;    /*%< dns_adbname_t */
-	isc_mempool_t                  *nhmp;   /*%< dns_adbnamehook_t */
-	isc_mempool_t                  *limp;   /*%< dns_adblameinfo_t */
-	isc_mempool_t                  *emp;    /*%< dns_adbentry_t */
-	isc_mempool_t                  *ahmp;   /*%< dns_adbfind_t */
-	isc_mempool_t                  *aimp;   /*%< dns_adbaddrinfo_t */
-	isc_mempool_t                  *afmp;   /*%< dns_adbfetch_t */
-
-	/*!
-	 * Bucketized locks and lists for names.
-	 *
-	 * XXXRTH  Have a per-bucket structure that contains all of these?
-	 */
-	unsigned int			nnames;
-	isc_mutex_t                     namescntlock;
-	unsigned int			namescnt;
-	dns_adbnamelist_t               *names;
-	dns_adbnamelist_t               *deadnames;
-	isc_mutex_t                     *namelocks;
-	isc_boolean_t                   *name_sd;
-	unsigned int                    *name_refcnt;
-
-	/*!
-	 * Bucketized locks and lists for entries.
-	 *
-	 * XXXRTH  Have a per-bucket structure that contains all of these?
-	 */
-	unsigned int			nentries;
-	isc_mutex_t                     entriescntlock;
-	unsigned int			entriescnt;
-	dns_adbentrylist_t              *entries;
-	dns_adbentrylist_t              *deadentries;
-	isc_mutex_t                     *entrylocks;
-	isc_boolean_t                   *entry_sd; /*%< shutting down */
-	unsigned int                    *entry_refcnt;
-
-	isc_event_t                     cevent;
-	isc_boolean_t                   cevent_sent;
-	isc_boolean_t                   shutting_down;
-	isc_eventlist_t                 whenshutdown;
-	isc_event_t			growentries;
-	isc_boolean_t			growentries_sent;
-	isc_event_t			grownames;
-	isc_boolean_t			grownames_sent;
-};
 
 /*
  * XXXMLG  Document these structures.

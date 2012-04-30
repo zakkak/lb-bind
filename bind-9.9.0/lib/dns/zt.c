@@ -37,20 +37,6 @@
 #include <dns/zone.h>
 #include <dns/zt.h>
 
-struct dns_zt {
-	/* Unlocked. */
-	unsigned int		magic;
-	isc_mem_t		*mctx;
-	dns_rdataclass_t	rdclass;
-	isc_rwlock_t		rwlock;
-	dns_zt_allloaded_t	loaddone;
-	void *			loaddone_arg;
-	/* Locked by lock. */
-	isc_uint32_t		references;
-	unsigned int		loads_pending;
-	dns_rbt_t		*table;
-};
-
 #define ZTMAGIC			ISC_MAGIC('Z', 'T', 'b', 'l')
 #define VALID_ZT(zt) 		ISC_MAGIC_VALID(zt, ZTMAGIC)
 
