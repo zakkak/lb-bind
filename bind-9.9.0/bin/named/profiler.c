@@ -11,8 +11,6 @@
 
 #include <lwres/lwres.h>
 
-#include <named/globals.h>
-
 #include <isc/mutex.h>
 #include <isc/util.h>
 
@@ -23,6 +21,9 @@
 #include <dns/adb.h>
 #include <dns/db.h>
 #include <dns/types.h>
+
+#include <named/globals.h>
+#include <named/server.h>
 
 #include <assert.h>
 #include <unistd.h>
