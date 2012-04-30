@@ -75,6 +75,13 @@ typedef struct node {
 
 node_t *list_g;
 
+/*** prototypes ***/
+void error(const char *msg);
+void print2hex(unsigned const char* string, int size);
+unsigned char *md5_digest(const char *input);
+int parse_response(char *response, a_node_t *currnode);
+char* sendMessage(char* orig_message, int sockfd);
+
 /*** WORKER COMMUNICATION FUNCTIONS ***/
 
 void error(const char *msg)
@@ -94,7 +101,7 @@ unsigned char *md5_digest(const char *input) {
   const EVP_MD *md;
   //char input[] = "REQSTATS";
   unsigned char* output = (unsigned char*)malloc(sizeof(unsigned char)*16);
-  int output_len, i;
+  int output_len;
 
   /* Initialize digests table */
   OpenSSL_add_all_digests();
@@ -139,9 +146,9 @@ int parse_response(char *response, a_node_t *currnode) {
 	timestamp = strtok(NULL, "$");	
 	printf("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
 	printf("timestamp=%s\n", timestamp);
-	currnode->io_load = stat[0];
-	currnode->cpu_load = stat[1];
-	currnode->net_load = stat[2];	
+	currnode->io_load = stats[0];
+	currnode->cpu_load = stats[1];
+	currnode->net_load = stats[2];	
 	return 0;
 }
 
@@ -212,7 +219,7 @@ static void profiler_poll_workers(node_t * cur)
 			return;
 		};
 		response = sendMessage(message, sockfd);
-		if(parse_response(response)) {
+		if(parse_response(response, tmp)) {
 			fprintf(stderr, "Could not read worker report\n");
 			//TODO:maybe handle this somehow?		
 		}
