@@ -2,3 +2,5 @@
 	fron worker_cntrl script
 * Worker script needs sysstat package to run
 * to run as daemon execute 'ruby worker_cntrl.rb start'
+* profiler requires openssl crypto libraries in order to produce md5 checksums
+  install libssl-dev package and complier with -lcrypto
