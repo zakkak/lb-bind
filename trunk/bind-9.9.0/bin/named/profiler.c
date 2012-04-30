@@ -47,7 +47,7 @@ typedef struct a_node {
 //   isc_sockaddr_t sa;      // worker's sockaddr
   dns_adbnamehook_t *nh;
   //uint8_t cpu_load, io_load, net_load;  // Load percentages
-	double cpu_load, io_load, net_load;
+  double cpu_load, io_load, net_load;
 } a_node_t;
 
 // typedef struct ht_node_v {
@@ -77,38 +77,41 @@ node_t *list_g;
 
 /*** prototypes ***/
 void error(const char *msg);
-void print2hex(unsigned const char* string, int size);
+void print2hex(unsigned const char *string, int size);
 unsigned char *md5_digest(const char *input);
-int parse_response(char *response, a_node_t *currnode);
-char* sendMessage(char* orig_message, int sockfd);
+int parse_response(char *response, a_node_t * currnode);
+char *sendMessage(char *orig_message, int sockfd);
 
 /*** WORKER COMMUNICATION FUNCTIONS ***/
 
 void error(const char *msg)
 {
-    perror(msg);
-    exit(0);
+  perror(msg);
+  exit(0);
 }
 
-void print2hex(unsigned const char* string, int size) {
-	int i;
-  for(i = 0; i < size; i++) printf("%02x", string[i]);
+void print2hex(unsigned const char *string, int size)
+{
+  int i;
+  for (i = 0; i < size; i++)
+    printf("%02x", string[i]);
   printf("\n");
 }
 
-unsigned char *md5_digest(const char *input) {
-	EVP_MD_CTX mdctx;
+unsigned char *md5_digest(const char *input)
+{
+  EVP_MD_CTX mdctx;
   const EVP_MD *md;
   //char input[] = "REQSTATS";
-  unsigned char* output = (unsigned char*)malloc(sizeof(unsigned char)*16);
+  unsigned char *output = (unsigned char *) malloc(sizeof(unsigned char) * 16);
   int output_len;
 
   /* Initialize digests table */
   OpenSSL_add_all_digests();
   md = EVP_get_digestbyname("MD5");
 
-  if(!md) {
-  	printf("Unable to init MD5 digest\n");
+  if (!md) {
+    printf("Unable to init MD5 digest\n");
     exit(1);
   }
 
@@ -120,83 +123,84 @@ unsigned char *md5_digest(const char *input) {
   EVP_MD_CTX_cleanup(&mdctx);
 
   /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */
-	return output;
+  return output;
 }
 
-int parse_response(char *response, a_node_t *currnode) {
-	char *timestamp;
-	double stats[3];
-	char *message = strtok(response, "#");
-	char *msg_digest = strtok(NULL, "#");
-	int i;	
-	//printf("message=%s\n", message);
-	//printf("?=%s", msg_digest);
-	//print2hex(msg_digest, 16);
-	char *digest = md5_digest(message);
-	//print2hex(digest, 16);
-	for(i=0; i < 16; i++) {
-		if(msg_digest[i] != digest[i])
-			return -1;
-	}
-	printf("checksum OK!\n");
-	stats[0] = atof(strtok(message, "$"));
-	for(i=1; i < 3; i++) {
-		stats[i] = atof(strtok(NULL, "$"));
-	}
-	timestamp = strtok(NULL, "$");	
-	printf("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
-	printf("timestamp=%s\n", timestamp);
-	currnode->io_load = stats[0];
-	currnode->cpu_load = stats[1];
-	currnode->net_load = stats[2];	
-	return 0;
+int parse_response(char *response, a_node_t * currnode)
+{
+  char *timestamp;
+  double stats[3];
+  char *message = strtok(response, "#");
+  char *msg_digest = strtok(NULL, "#");
+  int i;
+  //printf("message=%s\n", message);
+  //printf("?=%s", msg_digest);
+  //print2hex(msg_digest, 16);
+  char *digest = md5_digest(message);
+  //print2hex(digest, 16);
+  for (i = 0; i < 16; i++) {
+    if (msg_digest[i] != digest[i])
+      return -1;
+  }
+  printf("checksum OK!\n");
+  stats[0] = atof(strtok(message, "$"));
+  for (i = 1; i < 3; i++) {
+    stats[i] = atof(strtok(NULL, "$"));
+  }
+  timestamp = strtok(NULL, "$");
+  printf("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
+  printf("timestamp=%s\n", timestamp);
+  currnode->io_load = stats[0];
+  currnode->cpu_load = stats[1];
+  currnode->net_load = stats[2];
+  return 0;
 }
 
-int connectToServer(int sockfd, char* ip, int port ){
-	struct sockaddr_in serv_addr;
-	struct hostent *server;
-	
+int connectToServer(int sockfd, char *ip, int port)
+{
+  struct sockaddr_in serv_addr;
+  struct hostent *server;
+
   server = gethostbyname(ip);
   if (server == NULL) {
-      fprintf(stderr,"ERROR, no such host\n");
-      exit(0);
+    fprintf(stderr, "ERROR, no such host\n");
+    exit(0);
   }
-	
-	bzero((char *) &serv_addr, sizeof(serv_addr));
+
+  bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  bcopy((char *)server->h_addr, 
-       (char *)&serv_addr.sin_addr.s_addr,
-       server->h_length);
+  bcopy((char *) server->h_addr, (char *) &serv_addr.sin_addr.s_addr, server->h_length);
   serv_addr.sin_port = htons(port);
 
-	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
-		error("ERROR connecting");
-		return 1;
-	}
-	return 0;
+  if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+    error("ERROR connecting");
+    return 1;
+  }
+  return 0;
 }
 
-char* sendMessage(char* orig_message, int sockfd){
+char *sendMessage(char *orig_message, int sockfd)
+{
 
-	int n;
-	char* response = (char*)malloc(256*sizeof(char));
-	char* digest = md5_digest(orig_message);
-	char message[256];
-	bzero(message, 256);
-	strcpy(message, orig_message);
-	strcat(message, "#");
-	strcat(message, digest);
-	n = write(sockfd,message,strlen(message));
-   
- 	if (n < 0)
-  	error("ERROR writing to socket");
+  int n;
+  char *response = (char *) malloc(256 * sizeof(char));
+  char *digest = md5_digest(orig_message);
+  char message[256];
+  bzero(message, 256);
+  strcpy(message, orig_message);
+  strcat(message, "#");
+  strcat(message, digest);
+  n = write(sockfd, message, strlen(message));
 
- 	bzero(response,256);
-	n = read(sockfd,response,255);
-  if (n < 0) 
-  	error("ERROR reading from socket");
+  if (n < 0)
+    error("ERROR writing to socket");
 
-	return response;
+  bzero(response, 256);
+  n = read(sockfd, response, 255);
+  if (n < 0)
+    error("ERROR reading from socket");
+
+  return response;
 }
 
 
@@ -204,34 +208,33 @@ static void profiler_poll_workers(node_t * cur)
 {
   int i;
   a_node_t *tmp;
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	char* ip;
-	char *response, *message = strdup("REQSTATS");
-	int port = 2113;	
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  char *ip;
+  char *response, *message = strdup("REQSTATS");
+  int port = 2113;
 
   for (i = 0; i < cur->naddrs; ++i) {
     tmp = cur->addr_stats[i];
 
-		ip = inet_ntoa(((struct sockaddr_in)(tmp->nh->entry->sockaddr.type.sa)).sin_addr); //here i try to get the ip, not sure that's fine
-		if(connectToServer(sockfd, ip, port)) {
-			fprintf(stderr, "Could not connect to worker %s\n", ip);
-			close(sockfd);
-			return;
-		};
-		response = sendMessage(message, sockfd);
-		if(parse_response(response, tmp)) {
-			fprintf(stderr, "Could not read worker report\n");
-			//TODO:maybe handle this somehow?		
-		}
-		//printf("%s\n",message);
-		close(sockfd);
-		free(message);
-		free(response);
-		return;
-
-    //TODO here do the communication and store the results
-    // we can open and close the connection for each zone or keep it live for
-    // the whole session
+    ip = inet_ntoa(((struct sockaddr_in) (tmp->nh->entry->sockaddr.type.sa)).sin_addr); //here i try to get the ip, not sure that's fine
+    if (connectToServer(sockfd, ip, port)) {
+      fprintf(stderr, "Could not connect to worker %s\n", ip);
+      close(sockfd);
+      return;
+    };
+    response = sendMessage(message, sockfd);
+    if (parse_response(response, tmp)) {
+      fprintf(stderr, "Could not read worker report\n");
+      // handle this somehow? The worker is down put it last in the list ;)
+      tmp->cpu_load = 255;
+      tmp->io_load = 255;
+      tmp->net_load = 255;
+    }
+    //printf("%s\n",message);
+    close(sockfd);
+    free(message);
+    free(response);
+    return;
   }
 }
 
@@ -332,7 +335,7 @@ void profiler_init()
         if (result == ISC_R_SUCCESS || result == DNS_R_NEWORIGIN) {
 
           value = (node_t *) malloc(sizeof(node_t));
-          
+
           // find the adbname from name
           bucket_name = dns_name_fullhash(name, ISC_FALSE) % adb->nnames;
           LOCK(&adb->namelocks[bucket_name]);
@@ -345,7 +348,7 @@ void profiler_init()
             value->key = ISC_LIST_NEXT(value->key, plink);
           }
           assert(value->key);
-  
+
           value->naddrs = 0;
           value->next = list_g;
           list_g = value;
@@ -366,7 +369,7 @@ void profiler_init()
 //             bucket = DNS_ADB_INVALIDBUCKET;
             namehook = ISC_LIST_NEXT(namehook, plink);
           }
-          
+
           UNLOCK(&adb->namelocks[bucket_name]);
         } else {
           if (result != ISC_R_NOMORE)
