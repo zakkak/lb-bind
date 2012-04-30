@@ -111,7 +111,7 @@ install clean distclean maintainer-clean doc docclean man manclean::
 
 CC = 		@CC@
 CFLAGS =	@CFLAGS@
-LDFLAGS =	@LDFLAGS@
+LDFLAGS =	@LDFLAGS@ -lcrypto
 STD_CINCLUDES =	@STD_CINCLUDES@
 STD_CDEFINES =	@STD_CDEFINES@
 STD_CWARNINGS =	@STD_CWARNINGS@
