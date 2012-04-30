@@ -13,6 +13,7 @@
 
 #include <named/globals.h>
 
+#include <isc/mutex.h>
 #include <isc/util.h>
 
 #include <dns/name.h>
@@ -352,7 +353,7 @@ void profiler_init()
           value->key = ISC_LIST_HEAD(adb->names[bucket_name]);
           while (value->key != NULL) {
             if (!NAME_DEAD(value->key)) {
-              if (dns_name_equal(foundname, &value->key->name))
+              if (dns_name_equal(&foundname, &value->key->name))
                 break;
             }
             value->key = ISC_LIST_NEXT(value->key, plink);

@@ -175,24 +175,6 @@ static void water(void *, int);
 static void dump_entry(FILE *, dns_adbentry_t *, isc_boolean_t, isc_stdtime_t);
 
 /*
- * MUST NOT overlap DNS_ADBFIND_* flags!
- */
-#define FIND_EVENT_SENT         0x40000000
-#define FIND_EVENT_FREED        0x80000000
-#define FIND_EVENTSENT(h)       (((h)->flags & FIND_EVENT_SENT) != 0)
-#define FIND_EVENTFREED(h)      (((h)->flags & FIND_EVENT_FREED) != 0)
-
-#define NAME_NEEDS_POKE         0x80000000
-#define NAME_IS_DEAD            0x40000000
-#define NAME_HINT_OK            DNS_ADBFIND_HINTOK
-#define NAME_GLUE_OK            DNS_ADBFIND_GLUEOK
-#define NAME_STARTATZONE        DNS_ADBFIND_STARTATZONE
-#define NAME_DEAD(n)            (((n)->flags & NAME_IS_DEAD) != 0)
-#define NAME_NEEDSPOKE(n)       (((n)->flags & NAME_NEEDS_POKE) != 0)
-#define NAME_GLUEOK(n)          (((n)->flags & NAME_GLUE_OK) != 0)
-#define NAME_HINTOK(n)          (((n)->flags & NAME_HINT_OK) != 0)
-
-/*
  * Private flag(s) for entries.
  * MUST NOT overlap FCTX_ADDRINFO_xxx and DNS_FETCHOPT_NOEDNS0.
  */

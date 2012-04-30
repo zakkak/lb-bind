@@ -779,6 +779,24 @@ dns_adb_flushname(dns_adb_t *adb, dns_name_t *name);
  *\li	'name' is valid.
  */
 
+/*
+ * MUST NOT overlap DNS_ADBFIND_* flags!
+ */
+#define FIND_EVENT_SENT         0x40000000
+#define FIND_EVENT_FREED        0x80000000
+#define FIND_EVENTSENT(h)       (((h)->flags & FIND_EVENT_SENT) != 0)
+#define FIND_EVENTFREED(h)      (((h)->flags & FIND_EVENT_FREED) != 0)
+
+#define NAME_NEEDS_POKE         0x80000000
+#define NAME_IS_DEAD            0x40000000
+#define NAME_HINT_OK            DNS_ADBFIND_HINTOK
+#define NAME_GLUE_OK            DNS_ADBFIND_GLUEOK
+#define NAME_STARTATZONE        DNS_ADBFIND_STARTATZONE
+#define NAME_DEAD(n)            (((n)->flags & NAME_IS_DEAD) != 0)
+#define NAME_NEEDSPOKE(n)       (((n)->flags & NAME_NEEDS_POKE) != 0)
+#define NAME_GLUEOK(n)          (((n)->flags & NAME_GLUE_OK) != 0)
+#define NAME_HINTOK(n)          (((n)->flags & NAME_HINT_OK) != 0)
+
 ISC_LANG_ENDDECLS
 
 #endif /* DNS_ADB_H */
