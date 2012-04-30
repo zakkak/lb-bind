@@ -1,7 +1,9 @@
 /*
  * File: profiler.c
  *
- * Author: zakkak@csd.uoc.gr
+ * Authors:
+ *  zakkak@csd.uoc.gr
+ *  hassapis@csd.uoc.gr
  */
 
 
@@ -19,6 +21,7 @@
 #include <dns/result.h>
 #include <dns/adb.h>
 #include <dns/db.h>
+#include <dns/types.h>
 
 #include <assert.h>
 #include <unistd.h>
@@ -42,6 +45,12 @@
 #define IO  0.25f
 #define NET  0.25f
 #define CALC_LOAD(x) (x->cpu_load*CPU + x->io_load*IO + x->net_load*NET)
+
+#define TEST LOCK ## 1
+
+#if (TEST == 1)
+#error "Ooops"
+#endif
 
 typedef struct a_node {
 //   isc_sockaddr_t sa;      // worker's sockaddr
@@ -78,7 +87,7 @@ node_t *list_g;
 /*** prototypes ***/
 void error(const char *msg);
 void print2hex(unsigned const char *string, int size);
-unsigned char *md5_digest(const char *input);
+char *md5_digest(const char *input);
 int parse_response(char *response, a_node_t * currnode);
 char *sendMessage(char *orig_message, int sockfd);
 
@@ -98,13 +107,13 @@ void print2hex(unsigned const char *string, int size)
   printf("\n");
 }
 
-unsigned char *md5_digest(const char *input)
+char *md5_digest(const char *input)
 {
   EVP_MD_CTX mdctx;
   const EVP_MD *md;
   //char input[] = "REQSTATS";
   unsigned char *output = (unsigned char *) malloc(sizeof(unsigned char) * 16);
-  int output_len;
+  unsigned int output_len;
 
   /* Initialize digests table */
   OpenSSL_add_all_digests();
@@ -123,7 +132,7 @@ unsigned char *md5_digest(const char *input)
   EVP_MD_CTX_cleanup(&mdctx);
 
   /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */
-  return output;
+  return (char*)output;
 }
 
 int parse_response(char *response, a_node_t * currnode)
@@ -156,7 +165,7 @@ int parse_response(char *response, a_node_t * currnode)
   return 0;
 }
 
-int connectToServer(int sockfd, char *ip, int port)
+static int connectToServer(int sockfd, char *ip, int port)
 {
   struct sockaddr_in serv_addr;
   struct hostent *server;
@@ -216,7 +225,7 @@ static void profiler_poll_workers(node_t * cur)
   for (i = 0; i < cur->naddrs; ++i) {
     tmp = cur->addr_stats[i];
 
-    ip = inet_ntoa(((struct sockaddr_in) (tmp->nh->entry->sockaddr.type.sa)).sin_addr); //here i try to get the ip, not sure that's fine
+    ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
     if (connectToServer(sockfd, ip, port)) {
       fprintf(stderr, "Could not connect to worker %s\n", ip);
       close(sockfd);

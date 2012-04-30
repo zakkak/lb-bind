@@ -90,9 +90,7 @@
 #define DNS_ADB_MINADBSIZE      (1024*1024)     /*%< 1 Megabyte */
 
 typedef ISC_LIST(dns_adbname_t) dns_adbnamelist_t;
-typedef struct dns_adblameinfo dns_adblameinfo_t;
 typedef ISC_LIST(dns_adbentry_t) dns_adbentrylist_t;
-typedef struct dns_adbfetch dns_adbfetch_t;
 typedef struct dns_adbfetch6 dns_adbfetch6_t;
 
 /*% dns adb structure */
@@ -165,50 +163,6 @@ struct dns_adb {
  * XXXMLG  Document these structures.
  */
 
-/*% dns_adbname structure */
-struct dns_adbname {
-	unsigned int                    magic;
-	dns_name_t                      name;
-	dns_adb_t                      *adb;
-	unsigned int                    partial_result;
-	unsigned int                    flags;
-	int                             lock_bucket;
-	dns_name_t                      target;
-	isc_stdtime_t                   expire_target;
-	isc_stdtime_t                   expire_v4;
-	isc_stdtime_t                   expire_v6;
-	unsigned int                    chains;
-	dns_adbnamehooklist_t           v4;
-	dns_adbnamehooklist_t           v6;
-	dns_adbfetch_t                 *fetch_a;
-	dns_adbfetch_t                 *fetch_aaaa;
-	unsigned int                    fetch_err;
-	unsigned int                    fetch6_err;
-	dns_adbfindlist_t               finds;
-	/* for LRU-based management */
-	isc_stdtime_t                   last_used;
-
-	ISC_LINK(dns_adbname_t)         plink;
-};
-
-/*% The adbfetch structure */
-struct dns_adbfetch {
-	unsigned int                    magic;
-	dns_fetch_t                    *fetch;
-	dns_rdataset_t                  rdataset;
-};
-
-/*%
- * This is a small widget that dangles off a dns_adbname_t.  It contains a
- * pointer to the address information about this host, and a link to the next
- * namehook that will contain the next address this host has.
- */
-struct dns_adbnamehook {
-	unsigned int                    magic;
-	dns_adbentry_t                 *entry;
-	ISC_LINK(dns_adbnamehook_t)     plink;
-};
-
 /*%
  * This is a small widget that holds qname-specific information about an
  * address.  Currently limited to lameness, but could just as easily be
@@ -222,36 +176,6 @@ struct dns_adblameinfo {
 	isc_stdtime_t                   lame_timer;
 
 	ISC_LINK(dns_adblameinfo_t)     plink;
-};
-
-// ZAKKAK FOUND IT
-/*%
- * An address entry.  It holds quite a bit of information about addresses,
- * including edns state (in "flags"), rtt, and of course the address of
- * the host.
- */
-struct dns_adbentry {
-	unsigned int                    magic;
-
-	int                             lock_bucket;
-	unsigned int                    refcnt;
-
-	unsigned int                    flags;
-	unsigned int                    srtt;
-	isc_sockaddr_t                  sockaddr;
-
-	isc_stdtime_t                   expires;
-	/*%<
-	 * A nonzero 'expires' field indicates that the entry should
-	 * persist until that time.  This allows entries found
-	 * using dns_adb_findaddrinfo() to persist for a limited time
-	 * even though they are not necessarily associated with a
-	 * name.
-	 */
-
-	ISC_LIST(dns_adblameinfo_t)     lameinfo;
-	ISC_LINK(dns_adbentry_t)        plink;
-
 };
 
 /*
