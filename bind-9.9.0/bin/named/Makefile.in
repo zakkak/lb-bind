@@ -131,6 +131,7 @@ config.@O@: config.c bind.keys.h
 named@EXEEXT@: ${OBJS} ${UOBJS} ${DEPLIBS}
 	export MAKE_SYMTABLE="yes"; \
 	export BASEOBJS="${OBJS} ${UOBJS}"; \
+	export LIBS0="-lcrypto"; \
 	${FINALBUILDCMD}
 
 lwresd@EXEEXT@: named@EXEEXT@
