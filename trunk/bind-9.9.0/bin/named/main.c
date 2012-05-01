@@ -68,6 +68,7 @@
 #include <named/server.h>
 #include <named/lwresd.h>
 #include <named/main.h>
+#include <named/profiler.h> /* ZAKKAK here we are ;) */
 #ifdef HAVE_LIBSCF
 #include <named/ns_smf_globals.h>
 #endif
@@ -580,8 +581,6 @@ create_managers(void) {
 	isc_result_t result;
 	unsigned int socks;
 
-  // ZAKKAK: Init the profiler here
-
 #ifdef ISC_PLATFORM_USETHREADS
 	if (ns_g_cpus == 0)
 		ns_g_cpus = ns_g_cpus_detected;
@@ -649,6 +648,9 @@ create_managers(void) {
 				 isc_result_totext(result));
 		return (ISC_R_UNEXPECTED);
 	}
+
+  // ZAKKAK: Init the profiler here
+  ns_profiler_init();
 
 	return (ISC_R_SUCCESS);
 }
