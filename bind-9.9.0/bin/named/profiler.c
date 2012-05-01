@@ -12,7 +12,8 @@
 #include <lwres/lwres.h>
 
 #include <isc/mutex.h>
-#include <isc/util.h>
+#include <isc/util.h>>
+#include <isc/thread.h>
 
 #include <dns/name.h>
 #include <dns/rbt.h>
@@ -24,6 +25,7 @@
 
 #include <named/globals.h>
 #include <named/server.h>
+#include <named/profiler.h>
 
 #include <assert.h>
 #include <unistd.h>
@@ -87,22 +89,15 @@ typedef struct node {
 
 node_t *list_g;
 
-/*** prototypes ***/
-void error(const char *msg);
-void print2hex(unsigned const char *string, int size);
-char *md5_digest(const char *input);
-int parse_response(char *response, a_node_t * currnode);
-char *sendMessage(char *orig_message, int sockfd);
-
 /*** WORKER COMMUNICATION FUNCTIONS ***/
 
-void error(const char *msg)
+static void error(const char *msg)
 {
   perror(msg);
   exit(0);
 }
 
-void print2hex(unsigned const char *string, int size)
+static void print2hex(unsigned const char *string, int size)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -110,7 +105,7 @@ void print2hex(unsigned const char *string, int size)
   printf("\n");
 }
 
-char *md5_digest(const char *input)
+static char *md5_digest(const char *input)
 {
   EVP_MD_CTX mdctx;
   const EVP_MD *md;
@@ -138,7 +133,7 @@ char *md5_digest(const char *input)
   return (char*)output;
 }
 
-int parse_response(char *response, a_node_t * currnode)
+static int parse_response(char *response, a_node_t * currnode)
 {
   char *timestamp;
   double stats[3];
@@ -191,7 +186,7 @@ static int connectToServer(int sockfd, char *ip, int port)
   return 0;
 }
 
-char *sendMessage(char *orig_message, int sockfd)
+static char *sendMessage(char *orig_message, int sockfd)
 {
 
   int n;
@@ -216,7 +211,7 @@ char *sendMessage(char *orig_message, int sockfd)
 }
 
 
-static void profiler_poll_workers(node_t * cur)
+static void ns_profiler_poll_workers(node_t * cur)
 {
   int i;
   a_node_t *tmp;
@@ -266,7 +261,7 @@ static int cmp(const void *v_a, const void *v_b)
   return s_a - s_b;
 }
 
-static void profiler_update_addrs()
+static void ns_profiler_update_addrs()
 {
   node_t *current = list_g;
   int i, bucket;
@@ -275,12 +270,12 @@ static void profiler_update_addrs()
 
   while (1) {
     sleep(UPDATE_INTERVAL);
+    fprintf(stderr, "Here we go again!!!\n");
 
     while (current) {
 
-      profiler_poll_workers(current);
+      ns_profiler_poll_workers(current);
       qsort(current->addr_stats, current->naddrs, sizeof(a_node_t), cmp);
-
 
       // LOCK list before sorting
       bucket = current->key->lock_bucket;
@@ -298,7 +293,7 @@ static void profiler_update_addrs()
   }
 }
 
-void profiler_init()
+static isc_threadresult_t ns_profiler_thread()
 {
   int bucket, bucket_name;
   isc_result_t result;
@@ -396,5 +391,12 @@ void profiler_init()
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
   }
 
-  profiler_update_addrs();
+  ns_profiler_update_addrs();
+  
+  return ((isc_threadresult_t)0);
 }
+
+void ns_profiler_init(){
+  isc_thread_t thread;
+  isc_thread_create(ns_profiler_thread, NULL, &thread);
+};
