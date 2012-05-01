@@ -149,7 +149,6 @@ static int parse_response(char *response, a_node_t * currnode)
     if (msg_digest[i] != digest[i])
       return -1;
   }
-  printf("checksum OK!\n");
   stats[0] = atof(strtok(message, "$"));
   for (i = 1; i < 3; i++) {
     stats[i] = atof(strtok(NULL, "$"));
@@ -227,11 +226,14 @@ static void ns_profiler_poll_workers(node_t * cur)
     if (connectToServer(sockfd, ip, port)) {
       fprintf(stderr, "Could not connect to worker %s\n", ip);
       close(sockfd);
+      tmp->cpu_load = 255;
+      tmp->io_load = 255;
+      tmp->net_load = 255;
       return;
     };
     response = sendMessage(message, sockfd);
     if (parse_response(response, tmp)) {
-      fprintf(stderr, "Could not read worker report\n");
+      fprintf(stderr, "Checksum Error in worker's message\n");
       // handle this somehow? The worker is down put it last in the list ;)
       tmp->cpu_load = 255;
       tmp->io_load = 255;
