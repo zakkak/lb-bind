@@ -1,5 +1,3 @@
-#How to configure, compile, install and run lb-bind
-
 = Introduction =
 
 How to configure, compile, install and run lb-bind
