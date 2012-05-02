@@ -649,8 +649,8 @@ create_managers(void) {
 		return (ISC_R_UNEXPECTED);
 	}
 
-  // ZAKKAK: Init the profiler here
-//  ns_profiler_init();
+    // ZAKKAK: Init the profiler here
+    ns_profiler_init();
 
 	return (ISC_R_SUCCESS);
 }
