@@ -8,8 +8,8 @@ How to download, configure, compile, install and run lb-bind
 
 ==Requires==
 
-  *libssl-dev
-  *sysstat
+  * libssl-dev
+  * sysstat
 
 ==Download==
 {{{
