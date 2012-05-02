@@ -6,6 +6,11 @@ How to download, configure, compile, install and run lb-bind
 
 = Details =
 
+==Requires==
+
+  *libssl-dev
+  *sysstat
+
 ==Download==
 {{{
 svn checkout http://lb-bind.googlecode.com/svn/trunk/bind-9.9.0 lb-bind
