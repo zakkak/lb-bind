@@ -1,3 +1,4 @@
+#labels Phase-Deploy
 = Introduction =
 
 How to download, configure, compile, install and run lb-bind
@@ -5,28 +6,39 @@ How to download, configure, compile, install and run lb-bind
 
 = Details =
 
-*Download*
+==Download==
 {{{
 svn checkout http://lb-bind.googlecode.com/svn/trunk/bind-9.9.0 lb-bind
 }}}
 
-*Configure*
+==Configure==
 {{{
 configure --without-openssl --enable-fixed-rrset --disable-ipv6 --sysconfdir=/etc/bind --enable-threads
 }}}
 
-*Compile*
+==Compile==
 {{{
 make
 }}}
 
-*Install*
+==Install==
 {{{
 sudo make install
 }}}
 
-*Setup*
+==Setup==
 
+In `trunk/Bind_dependencies.rar` you will find `etc_bind` (copy it to `/etc/bind`)
+{{{
+sed -i 's/192\.168\.10\.10/your\.IP\.Addr\.ess/g' * in/*
+}}}
+Finally inside /etc/bind run 
+{{{
+./set_ttl.sh <TTL>
+}}}
+
+
+===Alternatively===
 Follow [http://ubuntuforums.org/showthread.php?t=236093 this guide]
 
 omitting this
@@ -37,6 +49,5 @@ forwarders {
 };
 }}}
 
-*Run*
-
-Execute named
+==Run==
+Execute `named -c /etc/bind/named.conf`
