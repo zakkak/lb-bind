@@ -55,4 +55,4 @@ forwarders {
 }}}
 
 ==Run==
-Execute `named -c /etc/bind/named.conf`
+Execute `named -4 -c /etc/bind/named.conf` -n <number of cpus>
