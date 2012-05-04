@@ -43,7 +43,7 @@
 
 // UPDATE_INTERVAL in seconds
 // TODO set TTL the same
-#define UPDATE_INTERVAL 60
+#define UPDATE_INTERVAL 5
 
 // assert( (CPU+IO+NET)==1.0f );
 #define CPU 0.5f
@@ -216,33 +216,36 @@ static void ns_profiler_poll_workers(node_t * cur)
   a_node_t *tmp;
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   char *ip;
-  char *response, *message = strdup("REQSTATS");
+//   char *response, *message = strdup("REQSTATS");
   int port = 2113;
 
   for (i = 0; i < cur->naddrs; ++i) {
     tmp = cur->addr_stats[i];
 
-    ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
-    if (connectToServer(sockfd, ip, port)) {
-      fprintf(stderr, "Could not connect to worker %s\n", ip);
-      close(sockfd);
-      tmp->cpu_load = 255;
-      tmp->io_load = 255;
-      tmp->net_load = 255;
-      return;
-    };
-    response = sendMessage(message, sockfd);
-    if (parse_response(response, tmp)) {
-      fprintf(stderr, "Checksum Error in worker's message\n");
-      // handle this somehow? The worker is down put it last in the list ;)
-      tmp->cpu_load = 255;
-      tmp->io_load = 255;
-      tmp->net_load = 255;
-    }
-    //printf("%s\n",message);
-    close(sockfd);
-    free(message);
-    free(response);
+      tmp->cpu_load = cur->naddrs-i;
+      tmp->io_load = cur->naddrs-i;
+      tmp->net_load = cur->naddrs-i;
+//     ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
+//     if (connectToServer(sockfd, ip, port)) {
+//       fprintf(stderr, "Could not connect to worker %s\n", ip);
+//       close(sockfd);
+//       tmp->cpu_load = 255;
+//       tmp->io_load = 255;
+//       tmp->net_load = 255;
+//       return;
+//     };
+//     response = sendMessage(message, sockfd);
+//     if (parse_response(response, tmp)) {
+//       fprintf(stderr, "Checksum Error in worker's message\n");
+//       // handle this somehow? The worker is down put it last in the list ;)
+//       tmp->cpu_load = 255;
+//       tmp->io_load = 255;
+//       tmp->net_load = 255;
+//     }
+//     //printf("%s\n",message);
+//     close(sockfd);
+//     free(message);
+//     free(response);
     return;
   }
 }
@@ -300,6 +303,7 @@ static isc_threadresult_t ns_profiler_thread()
   int bucket, bucket_name;
   isc_result_t result;
   dns_view_t *view;
+  uint8_t views_cnt=0;
 
   // For our book keeping
   node_t *value;
@@ -312,10 +316,74 @@ static isc_threadresult_t ns_profiler_thread()
   list_g = NULL;
 
   assert((CPU + IO + NET) == 1.0f);
+  
+  //delay us for 5 seconds
+  sleep(5);
 
   // Go through all views and initialize the hashtable
+  while(1){
+  sleep(5);
   for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {
+    ++views_cnt;
     adb = view->adb;
+    
+    dns_adb_dump(adb, stderr);
+    fprintf(stderr, "%u\n", views_cnt);
+    
+#if 0
+    // Go through all names
+    for (i = 0; i < adb->nnames; i++) {
+      name = ISC_LIST_HEAD(adb->names[i]);
+      while (name != NULL) {
+        bucket = isc_sockaddr_hash(&name->sockaddr, ISC_TRUE) % n;
+        name->lock_bucket = bucket;
+        ISC_LIST_APPEND(newnames[bucket], name, plink);
+        INSIST(adb->name_refcnt[i] > 0);
+        adb->name_refcnt[i]--;
+        newname_refcnt[bucket]++;
+        name = ISC_LIST_HEAD(adb->names[i]);
+      }
+      name = ISC_LIST_HEAD(adb->deadnames[i]);
+      while (name != NULL) {
+        ISC_LIST_UNLINK(adb->deadnames[i], name, plink);
+        bucket = isc_sockaddr_hash(&name->sockaddr, ISC_TRUE) % n;
+        name->lock_bucket = bucket;
+        ISC_LIST_APPEND(newdeadnames[bucket], name, plink);
+        INSIST(adb->name_refcnt[i] > 0);
+        adb->name_refcnt[i]--;
+        newname_refcnt[bucket]++;
+        name = ISC_LIST_HEAD(adb->deadnames[i]);
+      }
+      INSIST(adb->name_refcnt[i] == 0);
+      adb->irefcnt--;
+    }
+    
+    for (i = 0; i < adb->nentries; i++) {
+      entry = ISC_LIST_HEAD(adb->entries[i]);
+      while (entry != NULL) {
+        ISC_LIST_UNLINK(adb->entries[i], entry, plink);
+        bucket = isc_sockaddr_hash(&entry->sockaddr, ISC_TRUE) % n;
+        entry->lock_bucket = bucket;
+        ISC_LIST_APPEND(newentries[bucket], entry, plink);
+        INSIST(adb->entry_refcnt[i] > 0);
+        adb->entry_refcnt[i]--;
+        newentry_refcnt[bucket]++;
+        entry = ISC_LIST_HEAD(adb->entries[i]);
+      }
+      entry = ISC_LIST_HEAD(adb->deadentries[i]);
+      while (entry != NULL) {
+        ISC_LIST_UNLINK(adb->deadentries[i], entry, plink);
+        bucket = isc_sockaddr_hash(&entry->sockaddr, ISC_TRUE) % n;
+        entry->lock_bucket = bucket;
+        ISC_LIST_APPEND(newdeadentries[bucket], entry, plink);
+        INSIST(adb->entry_refcnt[i] > 0);
+        adb->entry_refcnt[i]--;
+        newentry_refcnt[bucket]++;
+        entry = ISC_LIST_HEAD(adb->deadentries[i]);
+      }
+      INSIST(adb->entry_refcnt[i] == 0);
+      adb->irefcnt--;
+    }
 
     // wait till load is complete
     while (view->zonetable->loads_pending);
@@ -356,27 +424,28 @@ static isc_threadresult_t ns_profiler_thread()
             }
             value->key = ISC_LIST_NEXT(value->key, plink);
           }
-          assert(value->key);
+          
+          if(value->key) {
+            value->naddrs = 0;
+            value->next = list_g;
+            list_g = value;
 
-          value->naddrs = 0;
-          value->next = list_g;
-          list_g = value;
+            namehook = ISC_LIST_HEAD(value->key->v4);
+            // iter through addresses
+            while (namehook != NULL) {
+              entry = namehook->entry;
+              bucket = entry->lock_bucket;
+              LOCK(&adb->entrylocks[bucket]);
 
-          namehook = ISC_LIST_HEAD(value->key->v4);
-          // iter through addresses
-          while (namehook != NULL) {
-            entry = namehook->entry;
-            bucket = entry->lock_bucket;
-            LOCK(&adb->entrylocks[bucket]);
+              value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
+              memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
+  //             memcpy(value->addr_stats[value->naddrs++]->sa, entry->sockaddr, sizeof(isc_sockaddr_t);
+              value->addr_stats[value->naddrs++]->nh = namehook;
 
-            value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
-            memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
-//             memcpy(value->addr_stats[value->naddrs++]->sa, entry->sockaddr, sizeof(isc_sockaddr_t);
-            value->addr_stats[value->naddrs++]->nh = namehook;
-
-            UNLOCK(&adb->entrylocks[bucket]);
-//             bucket = DNS_ADB_INVALIDBUCKET;
-            namehook = ISC_LIST_NEXT(namehook, plink);
+              UNLOCK(&adb->entrylocks[bucket]);
+  //             bucket = DNS_ADB_INVALIDBUCKET;
+              namehook = ISC_LIST_NEXT(namehook, plink);
+            }
           }
 
           UNLOCK(&adb->namelocks[bucket_name]);
@@ -391,9 +460,11 @@ static isc_threadresult_t ns_profiler_thread()
     }
 
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
+#endif
+  }
   }
 
-  ns_profiler_update_addrs();
+//   ns_profiler_update_addrs();
   
   return ((isc_threadresult_t)0);
 }
