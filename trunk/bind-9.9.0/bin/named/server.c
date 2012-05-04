@@ -1709,6 +1709,7 @@ configure_view(dns_view_t *view, cfg_obj_t *config, cfg_obj_t *vconfig,
 					 &view->queryacl));
 	}
 
+	// ZAKKAK here they create the zones for the view
 	/*
 	 * Configure the zones.
 	 */
@@ -2911,6 +2912,7 @@ configure_view(dns_view_t *view, cfg_obj_t *config, cfg_obj_t *vconfig,
 	return (result);
 }
 
+//ZAKKAK here they create the record for the zone
 static isc_result_t
 configure_hints(dns_view_t *view, const char *filename) {
 	isc_result_t result;
@@ -2919,6 +2921,7 @@ configure_hints(dns_view_t *view, const char *filename) {
 	db = NULL;
 	result = dns_rootns_create(view->mctx, view->rdclass, filename, &db);
 	if (result == ISC_R_SUCCESS) {
+    //ZAKKAK so it appears that what we want is in view->hints
 		dns_view_sethints(view, db);
 		dns_db_detach(&db);
 	}
@@ -4845,6 +4848,7 @@ load_configuration(const char *filename, ns_server_t *server,
 		dns_view_detach(&view);
 	}
 
+	// ZAKKAK here they crate the default view
 	/*
 	 * Make sure we have a default view if and only if there
 	 * were no explicit views.
