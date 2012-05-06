@@ -30,6 +30,7 @@
  */
 
 #include <isc/types.h>
+#include <netinet/in.h>
 
 typedef struct dns_acache			dns_acache_t;
 typedef struct dns_acacheentry			dns_acacheentry_t;
@@ -390,5 +391,15 @@ typedef isc_boolean_t
 typedef isc_boolean_t
 (*dns_isselffunc_t)(dns_view_t *, dns_tsigkey_t *, isc_sockaddr_t *,
 		    isc_sockaddr_t *, dns_rdataclass_t, void *);
+
+//ZAKKAK i am here too
+typedef struct ns_profiler_a_node {
+//   isc_sockaddr_t sa;      // worker's sockaddr
+//   dns_adbnamehook_t *nh;
+  struct in_addr in_addr;
+  //uint8_t cpu_load, io_load, net_load;  // Load percentages
+  double cpu_load, io_load, net_load;
+} ns_profiler_a_node_t;
+
 
 #endif /* DNS_TYPES_H */

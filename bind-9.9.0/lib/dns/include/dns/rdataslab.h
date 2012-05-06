@@ -89,6 +89,12 @@ dns_rdataslab_fromrdataset(dns_rdataset_t *rdataset, isc_mem_t *mctx,
  *\li	XXX others
  */
 
+// #if DNS_RDATASET_FIXED
+//ZAKKAK lets create a sorter
+isc_result_t
+dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t **addr_stats);
+// #endif
+
 void
 dns_rdataslab_tordataset(unsigned char *slab, unsigned int reservelen,
 			 dns_rdataclass_t rdclass, dns_rdatatype_t rdtype,
