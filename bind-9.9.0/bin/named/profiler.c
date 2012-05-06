@@ -389,6 +389,7 @@ static isc_threadresult_t ns_profiler_thread()
                   
                   // For each rdataset create a node in ht_g
                   value = (node_t *) malloc(sizeof(node_t));
+                  dns_rdataset_init(&value->rdataset);
                   dns_rdataset_clone(&rdataset, &value->rdataset);
                   value->naddrs = 0;
                   value->next = list_g;
