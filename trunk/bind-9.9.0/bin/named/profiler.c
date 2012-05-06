@@ -9,10 +9,14 @@
 
 #include <stdlib.h>
 
+#include <named/globals.h>
+#include <named/server.h>
+#include <named/profiler.h>
+
 #include <lwres/lwres.h>
 
 #include <isc/mutex.h>
-#include <isc/util.h>>
+#include <isc/util.h>
 #include <isc/thread.h>
 
 #include <dns/name.h>
@@ -22,10 +26,10 @@
 #include <dns/adb.h>
 #include <dns/db.h>
 #include <dns/types.h>
-
-#include <named/globals.h>
-#include <named/server.h>
-#include <named/profiler.h>
+#include <dns/zt.h>
+#include <dns/rdataslab.h>
+#include <dns/dbiterator.h>
+#include <dns/rdatasetiter.h>
 
 #include <assert.h>
 #include <unistd.h>
@@ -35,11 +39,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <openssl/evp.h>
-#include <dns/zt.h>
 
 // UPDATE_INTERVAL in seconds
 // TODO set TTL the same
@@ -52,7 +54,7 @@
 #define CALC_LOAD(x) (x->cpu_load*CPU + x->io_load*IO + x->net_load*NET)
 
 #define MYPRINT(...) fprintf(stderr, __VA_ARGS__)
-#define EPRINT(...) do{ MYPRINT(stderr, __VA_ARGS__); exit(1); }while(0)
+#define EPRINT(...) do{ MYPRINT(__VA_ARGS__); exit(1); }while(0)
 
 #if 1
 #define DPRINT MYPRINT
@@ -60,16 +62,8 @@
 #define DPRINT(...)
 #endif
 
-typedef struct a_node {
-//   isc_sockaddr_t sa;      // worker's sockaddr
-//   dns_adbnamehook_t *nh;
-  struct in_addr in_addr;
-  //uint8_t cpu_load, io_load, net_load;  // Load percentages
-  double cpu_load, io_load, net_load;
-} a_node_t;
-
 // typedef struct ht_node_v {
-//   a_node_t *addr_stats[LWRES_MAX_ADDRS];
+//   ns_profiler_a_node_t *addr_stats[LWRES_MAX_ADDRS];
 //   int naddrs;
 // } ht_node_v_t;
 // 
@@ -83,7 +77,7 @@ typedef struct a_node {
 typedef struct node {
 //   dns_adbname_t *key;
   dns_rdataset_t rdataset;
-  a_node_t *addr_stats[LWRES_MAX_ADDRS];
+  ns_profiler_a_node_t *addr_stats[LWRES_MAX_ADDRS];
   int naddrs;
   struct node *next;
 } node_t;
@@ -138,7 +132,7 @@ static char *md5_digest(const char *input)
   return (char*)output;
 }
 
-static int parse_response(char *response, a_node_t * currnode)
+static int parse_response(char *response, ns_profiler_a_node_t * currnode)
 {
   char *timestamp;
   double stats[3];
@@ -218,7 +212,7 @@ static char *sendMessage(char *orig_message, int sockfd)
 static void ns_profiler_poll_workers(node_t * cur)
 {
   int i;
-  a_node_t *tmp;
+  ns_profiler_a_node_t *tmp;
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   char *ip;
 //   char *response, *message = strdup("REQSTATS");
@@ -260,11 +254,11 @@ static void ns_profiler_poll_workers(node_t * cur)
 
 static int cmp(const void *v_a, const void *v_b)
 {
-  const a_node_t *a, *b;
+  const ns_profiler_a_node_t *a, *b;
   int s_a, s_b;
 
-  a = (const a_node_t *) v_a;
-  b = (const a_node_t *) v_b;
+  a = (const ns_profiler_a_node_t *) v_a;
+  b = (const ns_profiler_a_node_t *) v_b;
 
   s_a = CALC_LOAD(a);
   s_b = CALC_LOAD(b);
@@ -275,9 +269,7 @@ static int cmp(const void *v_a, const void *v_b)
 static void ns_profiler_update_addrs()
 {
   node_t *current = list_g;
-  int i, bucket;
-  dns_adbnamehook_t *tmp;
-  dns_adbnamehooklist_t *list;
+//   int i, bucket;
 
   while (1) {
     sleep(UPDATE_INTERVAL);
@@ -286,21 +278,12 @@ static void ns_profiler_update_addrs()
     while (current) {
 
       ns_profiler_poll_workers(current);
-      qsort(current->addr_stats, current->naddrs, sizeof(a_node_t), cmp);
+      qsort(current->addr_stats, current->naddrs, sizeof(ns_profiler_a_node_t), cmp);
 
       //TODO find a way to sort rdatasets :S
       // looks like we are going to have to move bytes in the rdatasets region
-      // 
-      // LOCK list before sorting
-//       bucket = current->key->lock_bucket;
-//       LOCK(&current->key->adb->namelocks[bucket]);
-//       list = &(current->key->v4);
-//       ISC_LIST_INIT(*list);
-//       for (i = 0; i < current->naddrs; ++i) {
-//         tmp = current->addr_stats[i]->nh;
-//         ISC_LIST_APPEND(*list, tmp, plink);
-//       }
-//       UNLOCK(&current->key->adb->namelocks[bucket]);
+      //TODO LOCK rdataset before sorting
+      dns_rdataslab_sort_fromrdataset(&current->rdataset, current->addr_stats);
 
       current = list_g->next;
     }
@@ -309,7 +292,6 @@ static void ns_profiler_update_addrs()
 
 static isc_threadresult_t ns_profiler_thread()
 {
-  int bucket, bucket_name;
   isc_result_t result;
   dns_view_t *view;
   uint8_t zone_cnt=0;
@@ -383,7 +365,7 @@ static isc_threadresult_t ns_profiler_thread()
               dns_rdataset_init(&rdataset);
               db_node = NULL;
               
-              result = dns_db_createiterator(db, 0, &dbiterator);
+              result = dns_db_createiterator(zone->db, 0, &dbiterator);
               if (result != ISC_R_SUCCESS)
                 EPRINT("Couln't create Iterator\n");
 
@@ -394,7 +376,7 @@ static isc_threadresult_t ns_profiler_thread()
                 if (result != ISC_R_SUCCESS)
                   continue;
 
-                result = dns_db_allrdatasets(db, db_node, NULL, 0, &rdsit);
+                result = dns_db_allrdatasets(zone->db, db_node, NULL, 0, &rdsit);
                 if (result != ISC_R_SUCCESS)
                   continue;
 
@@ -407,24 +389,24 @@ static isc_threadresult_t ns_profiler_thread()
                   
                   // For each rdataset create a node in ht_g
                   value = (node_t *) malloc(sizeof(node_t));
-                  dns_rdataset_clone(&rdataset, value->key);
+                  dns_rdataset_clone(&rdataset, &value->rdataset);
                   value->naddrs = 0;
                   value->next = list_g;
                   list_g = value;
                   
-                  for (result = dns_rdataset_first(rdataset);
+                  for (result = dns_rdataset_first(&rdataset);
                       result == ISC_R_SUCCESS;
-                      result = dns_rdataset_next(rdataset)) {
+                      result = dns_rdataset_next(&rdataset)) {
                     
-                    dns_rdataset_current(rdataset, &rdata);
+                    dns_rdataset_current(&rdataset, &rdata);
                     result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
                     RUNTIME_CHECK(result == ISC_R_SUCCESS);
                   
                     // push the rdatas in the node
-                    value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
-                    memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
-                    memcpy(value->addr_stats[value->naddrs++]->in_addr, rdata_a->in_addr, sizeof(struct in_addr);
-//                     value->addr_stats[value->naddrs++]->s_addr = rdata_a->in_addr.s_addr;
+                    value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
+                    memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
+                    memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
+//                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
                   }
                   
                 }
@@ -451,7 +433,7 @@ static isc_threadresult_t ns_profiler_thread()
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
   }
 
-//   ns_profiler_update_addrs();
+  ns_profiler_update_addrs();
   
   return ((isc_threadresult_t)0);
 }
@@ -459,4 +441,4 @@ static isc_threadresult_t ns_profiler_thread()
 void ns_profiler_init(){
   isc_thread_t thread;
   isc_thread_create(ns_profiler_thread, NULL, &thread);
-};
+}

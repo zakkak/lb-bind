@@ -28,15 +28,12 @@
 #include <isc/print.h>
 #include <isc/random.h>
 #include <isc/ratelimiter.h>
-#include <isc/refcount.h>
 #include <isc/rwlock.h>
 #include <isc/serial.h>
 #include <isc/stats.h>
-#include <isc/stdtime.h>
 #include <isc/strerror.h>
 #include <isc/string.h>
 #include <isc/taskpool.h>
-#include <isc/timer.h>
 #include <isc/util.h>
 
 #include <dns/acache.h>
@@ -79,7 +76,6 @@
 #include <dns/time.h>
 #include <dns/tsig.h>
 #include <dns/update.h>
-#include <dns/xfrin.h>
 #include <dns/zone.h>
 #include <dns/zt.h>
 
@@ -136,238 +132,6 @@
 #ifndef DNS_DUMP_DELAY
 #define DNS_DUMP_DELAY 900		/*%< 15 minutes */
 #endif
-
-typedef struct dns_notify dns_notify_t;
-typedef struct dns_stub dns_stub_t;
-typedef struct dns_load dns_load_t;
-typedef struct dns_forward dns_forward_t;
-typedef ISC_LIST(dns_forward_t) dns_forwardlist_t;
-typedef struct dns_io dns_io_t;
-typedef ISC_LIST(dns_io_t) dns_iolist_t;
-typedef struct dns_signing dns_signing_t;
-typedef ISC_LIST(dns_signing_t) dns_signinglist_t;
-typedef struct dns_nsec3chain dns_nsec3chain_t;
-typedef ISC_LIST(dns_nsec3chain_t) dns_nsec3chainlist_t;
-typedef struct dns_keyfetch dns_keyfetch_t;
-typedef struct dns_asyncload dns_asyncload_t;
-
-#define DNS_ZONE_CHECKLOCK
-#ifdef DNS_ZONE_CHECKLOCK
-#define LOCK_ZONE(z) \
-	 do { LOCK(&(z)->lock); \
-	      INSIST((z)->locked == ISC_FALSE); \
-	     (z)->locked = ISC_TRUE; \
-		} while (0)
-#define UNLOCK_ZONE(z) \
-	do { (z)->locked = ISC_FALSE; UNLOCK(&(z)->lock); } while (0)
-#define LOCKED_ZONE(z) ((z)->locked)
-#else
-#define LOCK_ZONE(z) LOCK(&(z)->lock)
-#define UNLOCK_ZONE(z) UNLOCK(&(z)->lock)
-#define LOCKED_ZONE(z) ISC_TRUE
-#endif
-
-#ifdef ISC_RWLOCK_USEATOMIC
-#define ZONEDB_INITLOCK(l)	isc_rwlock_init((l), 0, 0)
-#define ZONEDB_DESTROYLOCK(l)	isc_rwlock_destroy(l)
-#define ZONEDB_LOCK(l, t)	RWLOCK((l), (t))
-#define ZONEDB_UNLOCK(l, t)	RWUNLOCK((l), (t))
-#else
-#define ZONEDB_INITLOCK(l)	isc_mutex_init(l)
-#define ZONEDB_DESTROYLOCK(l)	DESTROYLOCK(l)
-#define ZONEDB_LOCK(l, t)	LOCK(l)
-#define ZONEDB_UNLOCK(l, t)	UNLOCK(l)
-#endif
-
-struct dns_zone {
-	/* Unlocked */
-	unsigned int		magic;
-	isc_mutex_t		lock;
-#ifdef DNS_ZONE_CHECKLOCK
-	isc_boolean_t		locked;
-#endif
-	isc_mem_t		*mctx;
-	isc_refcount_t		erefs;
-
-#ifdef ISC_RWLOCK_USEATOMIC
-	isc_rwlock_t		dblock;
-#else
-	isc_mutex_t		dblock;
-#endif
-	dns_db_t		*db;		/* Locked by dblock */
-
-	/* Locked */
-	dns_zonemgr_t		*zmgr;
-	ISC_LINK(dns_zone_t)	link;		/* Used by zmgr. */
-	isc_timer_t		*timer;
-	unsigned int		irefs;
-	dns_name_t		origin;
-	char			*masterfile;
-	dns_masterformat_t	masterformat;
-	char			*journal;
-	isc_int32_t		journalsize;
-	dns_rdataclass_t	rdclass;
-	dns_zonetype_t		type;
-	unsigned int		flags;
-	unsigned int		options;
-	unsigned int		db_argc;
-	char			**db_argv;
-	isc_time_t		expiretime;
-	isc_time_t		refreshtime;
-	isc_time_t		dumptime;
-	isc_time_t		loadtime;
-	isc_time_t		notifytime;
-	isc_time_t		resigntime;
-	isc_time_t		keywarntime;
-	isc_time_t		signingtime;
-	isc_time_t		nsec3chaintime;
-	isc_time_t		refreshkeytime;
-	isc_uint32_t		refreshkeyinterval;
-	isc_uint32_t		refreshkeycount;
-	isc_uint32_t		refresh;
-	isc_uint32_t		retry;
-	isc_uint32_t		expire;
-	isc_uint32_t		minimum;
-	isc_stdtime_t		key_expiry;
-	isc_stdtime_t		log_key_expired_timer;
-	char			*keydirectory;
-
-	isc_uint32_t		maxrefresh;
-	isc_uint32_t		minrefresh;
-	isc_uint32_t		maxretry;
-	isc_uint32_t		minretry;
-
-	isc_sockaddr_t		*masters;
-	dns_name_t		**masterkeynames;
-	isc_boolean_t		*mastersok;
-	unsigned int		masterscnt;
-	unsigned int		curmaster;
-	isc_sockaddr_t		masteraddr;
-	dns_notifytype_t	notifytype;
-	isc_sockaddr_t		*notify;
-	dns_name_t		**notifykeynames;
-	unsigned int		notifycnt;
-	isc_sockaddr_t		notifyfrom;
-	isc_task_t		*task;
-	isc_task_t		*loadtask;
-	isc_sockaddr_t		notifysrc4;
-	isc_sockaddr_t		notifysrc6;
-	isc_sockaddr_t		xfrsource4;
-	isc_sockaddr_t		xfrsource6;
-	isc_sockaddr_t		altxfrsource4;
-	isc_sockaddr_t		altxfrsource6;
-	isc_sockaddr_t		sourceaddr;
-	dns_xfrin_ctx_t		*xfr;		/* task locked */
-	dns_tsigkey_t		*tsigkey;	/* key used for xfr */
-	/* Access Control Lists */
-	dns_acl_t		*update_acl;
-	dns_acl_t		*forward_acl;
-	dns_acl_t		*notify_acl;
-	dns_acl_t		*query_acl;
-	dns_acl_t		*queryon_acl;
-	dns_acl_t		*xfr_acl;
-	isc_boolean_t		update_disabled;
-	isc_boolean_t		zero_no_soa_ttl;
-	dns_severity_t		check_names;
-	ISC_LIST(dns_notify_t)	notifies;
-	dns_request_t		*request;
-	dns_loadctx_t		*lctx;
-	dns_io_t		*readio;
-	dns_dumpctx_t		*dctx;
-	dns_io_t		*writeio;
-	isc_uint32_t		maxxfrin;
-	isc_uint32_t		maxxfrout;
-	isc_uint32_t		idlein;
-	isc_uint32_t		idleout;
-	isc_event_t		ctlevent;
-	dns_ssutable_t		*ssutable;
-	isc_uint32_t		sigvalidityinterval;
-	isc_uint32_t		sigresigninginterval;
-	dns_view_t		*view;
-	dns_acache_t		*acache;
-	dns_checkmxfunc_t	checkmx;
-	dns_checksrvfunc_t	checksrv;
-	dns_checknsfunc_t	checkns;
-	/*%
-	 * Zones in certain states such as "waiting for zone transfer"
-	 * or "zone transfer in progress" are kept on per-state linked lists
-	 * in the zone manager using the 'statelink' field.  The 'statelist'
-	 * field points at the list the zone is currently on.  It the zone
-	 * is not on any such list, statelist is NULL.
-	 */
-	ISC_LINK(dns_zone_t)	statelink;
-	dns_zonelist_t		*statelist;
-	/*%
-	 * Statistics counters about zone management.
-	 */
-	isc_stats_t		*stats;
-	/*%
-	 * Optional per-zone statistics counters.  Counted outside of this
-	 * module.
-	 */
-	isc_boolean_t		requeststats_on;
-	isc_stats_t		*requeststats;
-	isc_uint32_t		notifydelay;
-	dns_isselffunc_t	isself;
-	void			*isselfarg;
-
-	char *			strnamerd;
-	char *			strname;
-	char *			strrdclass;
-	char *			strviewname;
-
-	/*%
-	 * Serial number for deferred journal compaction.
-	 */
-	isc_uint32_t		compact_serial;
-	/*%
-	 * Keys that are signing the zone for the first time.
-	 */
-	dns_signinglist_t	signing;
-	dns_nsec3chainlist_t	nsec3chain;
-	/*%
-	 * Signing / re-signing quantum stopping parameters.
-	 */
-	isc_uint32_t		signatures;
-	isc_uint32_t		nodes;
-	dns_rdatatype_t		privatetype;
-
-	/*%
-	 * Autosigning/key-maintenance options
-	 */
-	isc_uint32_t		keyopts;
-
-	/*%
-	 * True if added by "rndc addzone"
-	 */
-	isc_boolean_t           added;
-
-	/*%
-	 * whether a rpz radix was needed when last loaded
-	 */
-	isc_boolean_t           rpz_zone;
-
-	/*%
-	 * Serial number update method.
-	 */
-	dns_updatemethod_t	updatemethod;
-
-	/*%
-	 * whether ixfr is requested
-	 */
-	isc_boolean_t		requestixfr;
-
-	/*%
-	 * Outstanding forwarded UPDATE requests.
-	 */
-	dns_forwardlist_t	forwards;
-
-	dns_zone_t		*raw;
-	dns_zone_t		*secure;
-
-	isc_boolean_t		sourceserialset;
-	isc_uint32_t		sourceserial;
-};
 
 #define DNS_ZONE_FLAG(z,f) (ISC_TF(((z)->flags & (f)) != 0))
 #define DNS_ZONE_SETFLAG(z,f) do { \

@@ -32,6 +32,7 @@
 #include <dns/rdata.h>
 #include <dns/rdataset.h>
 #include <dns/rdataslab.h>
+#include <dns/adb.h>
 
 /*
  * The rdataslab structure allows iteration to occur in both load order
@@ -119,6 +120,134 @@ fillin_offsets(unsigned char *offsetbase, unsigned int *offsettable,
 		*raw++ = (j & 0xff00) >> 8;
 		*raw = j++ & 0xff;
 	}
+}
+#endif
+
+/*% Note: the "const void *" are just to make qsort happy.  */
+static int
+cmp(const void *p1, const void *p2) {
+  const struct xrdata *x1 = p1;
+  const struct xrdata *x2 = p2;
+  return (x1->order - x2->order);
+}
+
+#if DNS_RDATASET_FIXED
+//ZAKKAK lets create a sorter
+// NOT TESTED
+isc_result_t
+dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t **addr_stats)
+{
+  struct xrdata  *x;
+  unsigned char  *rawbuf;
+  unsigned char  *offsetbase;
+  isc_result_t  result;
+  unsigned int  nitems;
+  unsigned int  i, k;
+  unsigned int   *offsettable;
+  unsigned int  length;
+  dns_rdata_in_a_t rdata_a;
+
+  nitems = dns_rdataset_count(rdataset);
+
+  if (nitems != 0) {
+    x = malloc(nitems * sizeof(struct xrdata));
+  } else
+    x = NULL;
+
+  /*
+   * Save all of the rdata members into an array.
+   */
+  result = dns_rdataset_first(rdataset);
+  if (result != ISC_R_SUCCESS && result != ISC_R_NOMORE)
+    goto free_rdatas;
+  for (i = 0; i < nitems && result == ISC_R_SUCCESS; i++) {
+    INSIST(result == ISC_R_SUCCESS);
+    dns_rdata_init(&x[i].rdata);
+    dns_rdataset_current(rdataset, &x[i].rdata);
+    dns_rdata_tostruct(&x[i].rdata, &rdata_a, NULL);
+    
+    for( k=0; k<nitems; ++k)
+      if(addr_stats[k]->in_addr.s_addr == rdata_a.in_addr.s_addr)
+        break;
+      
+    x[i].order = k;
+    
+    result = dns_rdataset_next(rdataset);
+  }
+  if (result != ISC_R_NOMORE)
+    goto free_rdatas;
+  if (i != nitems) {
+    /*
+     * Somehow we iterated over fewer rdatas than
+     * dns_rdataset_count() said there were!
+     */
+    result = ISC_R_FAILURE;
+    goto free_rdatas;
+  }
+
+  /*
+   * order x
+   */
+  qsort(x, nitems, sizeof(struct xrdata), cmp);
+
+  /*
+   * Allocate the memory, set up a buffer, start copying in
+   * data.
+   */
+  rawbuf = rdataset->private3;
+
+  /* Allocate temporary offset table. */
+  offsettable = malloc(nitems * sizeof(unsigned int));
+  memset(offsettable, 0, nitems * sizeof(unsigned int));
+
+//   rawbuf += reservelen;
+  offsetbase = rawbuf;
+
+  *rawbuf++ = (nitems & 0xff00) >> 8;
+  *rawbuf++ = (nitems & 0x00ff);
+
+  /* Skip load order table.  Filled in later. */
+  rawbuf += nitems * 4;
+
+  for (i = 0; i < nitems; i++) {
+    if (x[i].rdata.data == NULL)
+      continue;
+    offsettable[x[i].order] = rawbuf - offsetbase;
+    length = x[i].rdata.length;
+    if (rdataset->type == dns_rdatatype_rrsig)
+      length++;
+    *rawbuf++ = (length & 0xff00) >> 8;
+    *rawbuf++ = (length & 0x00ff);
+    rawbuf += 2;  /* filled in later */
+    /*
+     * Store the per RR meta data.
+     */
+    if (rdataset->type == dns_rdatatype_rrsig) {
+      *rawbuf++ |= (x[i].rdata.flags & DNS_RDATA_OFFLINE) ?
+              DNS_RDATASLAB_OFFLINE : 0;
+    }
+    memcpy(rawbuf, x[i].rdata.data, x[i].rdata.length);
+    rawbuf += x[i].rdata.length;
+  }
+
+#if DNS_RDATASET_FIXED
+  fillin_offsets(offsetbase, offsettable, nitems);
+  free(offsettable);
+#endif
+
+  result = ISC_R_SUCCESS;
+
+
+  /*
+   * Reset iterator state.
+   */
+  rdataset->privateuint4 = 0;
+  rdataset->private5 = NULL;
+  
+ free_rdatas:
+  if (x != NULL)
+    free(x);
+  return result;
 }
 #endif
 
