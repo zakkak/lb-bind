@@ -1084,6 +1084,7 @@ load_text(dns_loadctx_t *lctx) {
 	if ((lctx->options & DNS_MASTER_CHECKMXFAIL) != 0)
 		options |= DNS_RDATA_CHECKMXFAIL;
 	source = isc_lex_getsourcename(lctx->lex);
+//ZAKKAK here it parses our records 
 	do {
 		initialws = ISC_FALSE;
 		line = isc_lex_getsourceline(lctx->lex);
@@ -1622,6 +1623,7 @@ load_text(dns_loadctx_t *lctx) {
 				goto insist_and_cleanup;
 		}
 
+		//ZAKKAK here it takes the record's type
 		result = dns_rdatatype_fromtext(&type,
 						&token.value.as_textregion);
 		if (result != ISC_R_SUCCESS) {
@@ -1766,6 +1768,7 @@ load_text(dns_loadctx_t *lctx) {
 		/*
 		 * Read rdata contents.
 		 */
+    // ZAKKAK Read rdata contents
 		dns_rdata_init(&rdata[rdcount]);
 		target_ft = target;
 		result = dns_rdata_fromtext(&rdata[rdcount], lctx->zclass,

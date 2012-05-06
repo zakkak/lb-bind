@@ -1736,7 +1736,6 @@ dns_zone_asyncload(dns_zone_t *zone, dns_zt_zoneloaded_t done, void *arg) {
 	LOCK_ZONE(zone);
 	zone_iattach(zone, &asl->zone);
 	DNS_ZONE_SETFLAG(zone, DNS_ZONEFLG_LOADPENDING);
-  // ZAKKAK issue the loadtask
 	isc_task_send(zone->loadtask, &e);
 	UNLOCK_ZONE(zone);
 
