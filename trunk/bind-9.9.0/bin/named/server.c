@@ -2921,7 +2921,6 @@ configure_hints(dns_view_t *view, const char *filename) {
 	db = NULL;
 	result = dns_rootns_create(view->mctx, view->rdclass, filename, &db);
 	if (result == ISC_R_SUCCESS) {
-    //ZAKKAK so it appears that what we want is in view->hints
 		dns_view_sethints(view, db);
 		dns_db_detach(&db);
 	}
@@ -5282,7 +5281,6 @@ load_zones(ns_server_t *server) {
 		if (view->redirect != NULL)
 			CHECK(dns_zone_load(view->redirect));
 		isc_refcount_increment(&zl->refs, NULL);
-    // ZAKKAK issues load tasks
 		CHECK(dns_view_asyncload(view, view_loaded, zl));
 	}
 

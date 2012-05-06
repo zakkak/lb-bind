@@ -51,15 +51,19 @@
 #define NET  0.25f
 #define CALC_LOAD(x) (x->cpu_load*CPU + x->io_load*IO + x->net_load*NET)
 
-#define TEST LOCK ## 1
+#define MYPRINT(...) fprintf(stderr, __VA_ARGS__)
+#define EPRINT(...) do{ MYPRINT(stderr, __VA_ARGS__); exit(1); }while(0)
 
-#if (TEST == 1)
-#error "Ooops"
+#if 1
+#define DPRINT MYPRINT
+#else
+#define DPRINT(...)
 #endif
 
 typedef struct a_node {
 //   isc_sockaddr_t sa;      // worker's sockaddr
-  dns_adbnamehook_t *nh;
+//   dns_adbnamehook_t *nh;
+  struct in_addr in_addr;
   //uint8_t cpu_load, io_load, net_load;  // Load percentages
   double cpu_load, io_load, net_load;
 } a_node_t;
@@ -77,7 +81,8 @@ typedef struct a_node {
 // ht_hashtable_t ht_g;                 // mapping names to ht_nodes
 
 typedef struct node {
-  dns_adbname_t *key;
+//   dns_adbname_t *key;
+  dns_rdataset_t rdataset;
   a_node_t *addr_stats[LWRES_MAX_ADDRS];
   int naddrs;
   struct node *next;
@@ -118,7 +123,7 @@ static char *md5_digest(const char *input)
   md = EVP_get_digestbyname("MD5");
 
   if (!md) {
-    printf("Unable to init MD5 digest\n");
+    EPRINT("Unable to init MD5 digest\n");
     exit(1);
   }
 
@@ -154,8 +159,8 @@ static int parse_response(char *response, a_node_t * currnode)
     stats[i] = atof(strtok(NULL, "$"));
   }
   timestamp = strtok(NULL, "$");
-  printf("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
-  printf("timestamp=%s\n", timestamp);
+  DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
+  DPRINT("timestamp=%s\n", timestamp);
   currnode->io_load = stats[0];
   currnode->cpu_load = stats[1];
   currnode->net_load = stats[2];
@@ -225,6 +230,7 @@ static void ns_profiler_poll_workers(node_t * cur)
       tmp->cpu_load = cur->naddrs-i;
       tmp->io_load = cur->naddrs-i;
       tmp->net_load = cur->naddrs-i;
+      //TODO here use the ip of th emachine running the workers' simulator
 //     ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
 //     if (connectToServer(sockfd, ip, port)) {
 //       fprintf(stderr, "Could not connect to worker %s\n", ip);
@@ -275,23 +281,26 @@ static void ns_profiler_update_addrs()
 
   while (1) {
     sleep(UPDATE_INTERVAL);
-    fprintf(stderr, "Here we go again!!!\n");
+    DPRINT("Here we go again!!!\n");
 
     while (current) {
 
       ns_profiler_poll_workers(current);
       qsort(current->addr_stats, current->naddrs, sizeof(a_node_t), cmp);
 
+      //TODO find a way to sort rdatasets :S
+      // looks like we are going to have to move bytes in the rdatasets region
+      // 
       // LOCK list before sorting
-      bucket = current->key->lock_bucket;
-      LOCK(&current->key->adb->namelocks[bucket]);
-      list = &(current->key->v4);
-      ISC_LIST_INIT(*list);
-      for (i = 0; i < current->naddrs; ++i) {
-        tmp = current->addr_stats[i]->nh;
-        ISC_LIST_APPEND(*list, tmp, plink);
-      }
-      UNLOCK(&current->key->adb->namelocks[bucket]);
+//       bucket = current->key->lock_bucket;
+//       LOCK(&current->key->adb->namelocks[bucket]);
+//       list = &(current->key->v4);
+//       ISC_LIST_INIT(*list);
+//       for (i = 0; i < current->naddrs; ++i) {
+//         tmp = current->addr_stats[i]->nh;
+//         ISC_LIST_APPEND(*list, tmp, plink);
+//       }
+//       UNLOCK(&current->key->adb->namelocks[bucket]);
 
       current = list_g->next;
     }
@@ -303,15 +312,11 @@ static isc_threadresult_t ns_profiler_thread()
   int bucket, bucket_name;
   isc_result_t result;
   dns_view_t *view;
-  uint8_t views_cnt=0;
+  uint8_t zone_cnt=0;
 
   // For our book keeping
   node_t *value;
   //////////////////////////////////////////////////////////////////////////////
-
-  dns_adb_t *adb;
-  dns_adbnamehook_t *namehook;
-  dns_adbentry_t *entry;
 
   list_g = NULL;
 
@@ -321,69 +326,7 @@ static isc_threadresult_t ns_profiler_thread()
   sleep(5);
 
   // Go through all views and initialize the hashtable
-  while(1){
-  sleep(5);
-  for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {
-    ++views_cnt;
-    adb = view->adb;
-    
-    dns_adb_dump(adb, stderr);
-    fprintf(stderr, "%u\n", views_cnt);
-    
-#if 0
-    // Go through all names
-    for (i = 0; i < adb->nnames; i++) {
-      name = ISC_LIST_HEAD(adb->names[i]);
-      while (name != NULL) {
-        bucket = isc_sockaddr_hash(&name->sockaddr, ISC_TRUE) % n;
-        name->lock_bucket = bucket;
-        ISC_LIST_APPEND(newnames[bucket], name, plink);
-        INSIST(adb->name_refcnt[i] > 0);
-        adb->name_refcnt[i]--;
-        newname_refcnt[bucket]++;
-        name = ISC_LIST_HEAD(adb->names[i]);
-      }
-      name = ISC_LIST_HEAD(adb->deadnames[i]);
-      while (name != NULL) {
-        ISC_LIST_UNLINK(adb->deadnames[i], name, plink);
-        bucket = isc_sockaddr_hash(&name->sockaddr, ISC_TRUE) % n;
-        name->lock_bucket = bucket;
-        ISC_LIST_APPEND(newdeadnames[bucket], name, plink);
-        INSIST(adb->name_refcnt[i] > 0);
-        adb->name_refcnt[i]--;
-        newname_refcnt[bucket]++;
-        name = ISC_LIST_HEAD(adb->deadnames[i]);
-      }
-      INSIST(adb->name_refcnt[i] == 0);
-      adb->irefcnt--;
-    }
-    
-    for (i = 0; i < adb->nentries; i++) {
-      entry = ISC_LIST_HEAD(adb->entries[i]);
-      while (entry != NULL) {
-        ISC_LIST_UNLINK(adb->entries[i], entry, plink);
-        bucket = isc_sockaddr_hash(&entry->sockaddr, ISC_TRUE) % n;
-        entry->lock_bucket = bucket;
-        ISC_LIST_APPEND(newentries[bucket], entry, plink);
-        INSIST(adb->entry_refcnt[i] > 0);
-        adb->entry_refcnt[i]--;
-        newentry_refcnt[bucket]++;
-        entry = ISC_LIST_HEAD(adb->entries[i]);
-      }
-      entry = ISC_LIST_HEAD(adb->deadentries[i]);
-      while (entry != NULL) {
-        ISC_LIST_UNLINK(adb->deadentries[i], entry, plink);
-        bucket = isc_sockaddr_hash(&entry->sockaddr, ISC_TRUE) % n;
-        entry->lock_bucket = bucket;
-        ISC_LIST_APPEND(newdeadentries[bucket], entry, plink);
-        INSIST(adb->entry_refcnt[i] > 0);
-        adb->entry_refcnt[i]--;
-        newentry_refcnt[bucket]++;
-        entry = ISC_LIST_HEAD(adb->deadentries[i]);
-      }
-      INSIST(adb->entry_refcnt[i] == 0);
-      adb->irefcnt--;
-    }
+  for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {    
 
     // wait till load is complete
     while (view->zonetable->loads_pending);
@@ -392,76 +335,120 @@ static isc_threadresult_t ns_profiler_thread()
     dns_name_t foundname, *origin;
     dns_rbtnodechain_t chain;
     dns_fixedname_t fixedorigin;
+    dns_zone_t *zone;
+    dns_rbtnode_t *rbt_node;
+    
+    // For the db iterator
+    dns_dbiterator_t *dbiterator = NULL;
+    dns_rdataset_t rdataset;
+    dns_rdatasetiter_t *rdsit = NULL;
+    dns_dbnode_t *db_node;
+    dns_fixedname_t fixed_i;
+    dns_name_t *name_i;
 
+    // For the rdataset iterator
+    dns_rdata_t rdata = DNS_RDATA_INIT;
+    dns_rdata_in_a_t rdata_a;
+    
     dns_rbtnodechain_init(&chain, view->zonetable->table->mctx);
 
     dns_name_init(&foundname, NULL);
     dns_fixedname_init(&fixedorigin);
     origin = dns_fixedname_name(&fixedorigin);
-    //////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     // lock the zonetable
     RWLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
     result = dns_rbtnodechain_first(&chain, view->zonetable->table, &foundname, origin);
+//     result = dns_rbtnodechain_first(&chain, view->zonetable->table, NULL, NULL);
 
     if (result != ISC_R_SUCCESS && result != DNS_R_NEWORIGIN)
-      printf("start not found!\n");
+      EPRINT("start not found!\n");
     else {
-      // now go through the zonetable and for each zone add a node to ht_g
+      // now go through the zonetable
       for (;;) {
+        rbt_node = NULL;
         if (result == ISC_R_SUCCESS || result == DNS_R_NEWORIGIN) {
+          result = dns_rbtnodechain_current(&chain, &foundname, origin, &rbt_node);
+          if (result == ISC_R_SUCCESS) {
+            zone = rbt_node->data;
+            if (zone != NULL) {
+              char tmp[256];
+              dns_zone_name(zone, tmp, sizeof(tmp));
+              DPRINT("Current zone=\"%s\"", tmp);
+              ++zone_cnt;
+              // GO through the zone's db
+              dns_fixedname_init(&fixed_i);
+              name_i = dns_fixedname_name(&fixed_i);
+              dns_rdataset_init(&rdataset);
+              db_node = NULL;
+              
+              result = dns_db_createiterator(db, 0, &dbiterator);
+              if (result != ISC_R_SUCCESS)
+                EPRINT("Couln't create Iterator\n");
 
-          value = (node_t *) malloc(sizeof(node_t));
+              for (result = dns_dbiterator_first(dbiterator);
+                  result == ISC_R_SUCCESS;
+                  result = dns_dbiterator_next(dbiterator)) {
+                result = dns_dbiterator_current(dbiterator, &db_node, name_i);
+                if (result != ISC_R_SUCCESS)
+                  continue;
 
-          // find the adbname from name
-          bucket_name = dns_name_fullhash(&foundname, ISC_FALSE) % adb->nnames;
-          LOCK(&adb->namelocks[bucket_name]);
-          value->key = ISC_LIST_HEAD(adb->names[bucket_name]);
-          while (value->key != NULL) {
-            if (!NAME_DEAD(value->key)) {
-              if (dns_name_equal(&foundname, &value->key->name))
-                break;
+                result = dns_db_allrdatasets(db, db_node, NULL, 0, &rdsit);
+                if (result != ISC_R_SUCCESS)
+                  continue;
+
+                // Now go through the rdatasets
+                for (result = dns_rdatasetiter_first(rdsit);
+                    result == ISC_R_SUCCESS;
+                    result = dns_rdatasetiter_next(rdsit)) {
+                  // get the current dataset
+                  dns_rdatasetiter_current(rdsit, &rdataset);
+                  
+                  // For each rdataset create a node in ht_g
+                  value = (node_t *) malloc(sizeof(node_t));
+                  dns_rdataset_clone(&rdataset, value->key);
+                  value->naddrs = 0;
+                  value->next = list_g;
+                  list_g = value;
+                  
+                  for (result = dns_rdataset_first(rdataset);
+                      result == ISC_R_SUCCESS;
+                      result = dns_rdataset_next(rdataset)) {
+                    
+                    dns_rdataset_current(rdataset, &rdata);
+                    result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
+                    RUNTIME_CHECK(result == ISC_R_SUCCESS);
+                  
+                    // push the rdatas in the node
+                    value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
+                    memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
+                    memcpy(value->addr_stats[value->naddrs++]->in_addr, rdata_a->in_addr, sizeof(struct in_addr);
+//                     value->addr_stats[value->naddrs++]->s_addr = rdata_a->in_addr.s_addr;
+                  }
+                  
+                }
+                
+                dns_rdatasetiter_destroy(&rdsit);
+              }
+              
+              dns_dbiterator_destroy(&dbiterator);
             }
-            value->key = ISC_LIST_NEXT(value->key, plink);
           }
-          
-          if(value->key) {
-            value->naddrs = 0;
-            value->next = list_g;
-            list_g = value;
-
-            namehook = ISC_LIST_HEAD(value->key->v4);
-            // iter through addresses
-            while (namehook != NULL) {
-              entry = namehook->entry;
-              bucket = entry->lock_bucket;
-              LOCK(&adb->entrylocks[bucket]);
-
-              value->addr_stats[value->naddrs] = (a_node_t *) malloc(sizeof(a_node_t));
-              memset(value->addr_stats[value->naddrs], 0, (sizeof(a_node_t)));
-  //             memcpy(value->addr_stats[value->naddrs++]->sa, entry->sockaddr, sizeof(isc_sockaddr_t);
-              value->addr_stats[value->naddrs++]->nh = namehook;
-
-              UNLOCK(&adb->entrylocks[bucket]);
-  //             bucket = DNS_ADB_INVALIDBUCKET;
-              namehook = ISC_LIST_NEXT(namehook, plink);
-            }
-          }
-
-          UNLOCK(&adb->namelocks[bucket_name]);
         } else {
           if (result != ISC_R_NOMORE)
-            printf("UNEXEPCTED ITERATION ERROR: %s", dns_result_totext(result));
+            EPRINT("UNEXEPCTED ITERATION ERROR: %s", dns_result_totext(result));
           break;
         }
 
         result = dns_rbtnodechain_next(&chain, &foundname, origin);
       }
+      
+
+      DPRINT("Found %d zones\n", zone_cnt);
     }
 
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
-#endif
-  }
   }
 
 //   ns_profiler_update_addrs();

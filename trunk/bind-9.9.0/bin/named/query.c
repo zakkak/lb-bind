@@ -4768,6 +4768,7 @@ do { \
  *	ISC_R_SUCCESS
  *	ISC_R_NOTIMPLEMENTED	The rdata is not a known address type.
  */
+// ZAKKAK ok finally rdata are really simpler than i thought :P
 static isc_result_t
 rdata_tonetaddr(const dns_rdata_t *rdata, isc_netaddr_t *netaddr) {
 	struct in_addr ina;

@@ -340,7 +340,7 @@ insert_into_typenames(int type, const char *typename, const char *attr) {
 			typename);
 		exit(1);
 	}
-	strcpy(ttn->typename, typename);
+	strcpy (ttn->typename, typename);
 	ttn->type = type;
 
 	strcpy(ttn->macroname, ttn->typename);

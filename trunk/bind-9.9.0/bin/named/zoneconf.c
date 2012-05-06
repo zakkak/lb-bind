@@ -931,6 +931,7 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 		size_t signedlen = strlen(filename) + sizeof(SIGNED);
 		char *signedname;
 
+  // ZAKKAK here it sets the filename for the zone
 		RETERR(dns_zone_setfile2(raw, filename, masterformat));
 		signedname = isc_mem_get(mctx, signedlen);
 		if (signedname == NULL)
