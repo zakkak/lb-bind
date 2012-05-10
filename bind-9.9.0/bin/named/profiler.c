@@ -329,7 +329,7 @@ static isc_threadresult_t ns_profiler_thread()
     dns_name_t *name_i;
 
     // For the rdataset iterator
-    dns_rdata_t rdata = DNS_RDATA_INIT;
+    dns_rdata_t rdata;
     dns_rdata_in_a_t rdata_a;
     
     dns_rbtnodechain_init(&chain, view->zonetable->table->mctx);
@@ -362,7 +362,6 @@ static isc_threadresult_t ns_profiler_thread()
               // GO through the zone's db
               dns_fixedname_init(&fixed_i);
               name_i = dns_fixedname_name(&fixed_i);
-              dns_rdataset_init(&rdataset);
               db_node = NULL;
               
               result = dns_db_createiterator(zone->db, 0, &dbiterator);
@@ -385,6 +384,7 @@ static isc_threadresult_t ns_profiler_thread()
                     result == ISC_R_SUCCESS;
                     result = dns_rdatasetiter_next(rdsit)) {
                   // get the current dataset
+	          dns_rdataset_init(&rdataset);
                   dns_rdatasetiter_current(rdsit, &rdataset);
                   
 #if 1
@@ -400,7 +400,8 @@ static isc_threadresult_t ns_profiler_thread()
                   for (result = dns_rdataset_first(&rdataset);
                       result == ISC_R_SUCCESS;
                       result = dns_rdataset_next(&rdataset)) {
-                    
+
+                    dns_rdata_init(&rdata);
                     dns_rdataset_current(&rdataset, &rdata);
 #if 1
                     if (rdata.type == dns_rdatatype_a) {
