@@ -387,6 +387,7 @@ static isc_threadresult_t ns_profiler_thread()
                   // get the current dataset
                   dns_rdatasetiter_current(rdsit, &rdataset);
                   
+#if 1
                   // For each rdataset create a node in ht_g
                   value = (node_t *) malloc(sizeof(node_t));
                   dns_rdataset_init(&value->rdataset);
@@ -394,20 +395,25 @@ static isc_threadresult_t ns_profiler_thread()
                   value->naddrs = 0;
                   value->next = list_g;
                   list_g = value;
-                  
+#endif
+
                   for (result = dns_rdataset_first(&rdataset);
                       result == ISC_R_SUCCESS;
                       result = dns_rdataset_next(&rdataset)) {
                     
                     dns_rdataset_current(&rdataset, &rdata);
-                    result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
-                    RUNTIME_CHECK(result == ISC_R_SUCCESS);
-                  
-                    // push the rdatas in the node
-                    value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
-                    memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
-                    memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
-//                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
+#if 1
+                    if (rdata.type == dns_rdatatype_a) {
+                      result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
+                      RUNTIME_CHECK(result == ISC_R_SUCCESS);
+                    
+                      // push the rdatas in the node
+                      value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
+                      memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
+                      memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
+  //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
+                    }
+#endif
                   }
                   
                 }
