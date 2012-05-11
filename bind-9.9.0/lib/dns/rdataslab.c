@@ -132,124 +132,6 @@ cmp(const void *p1, const void *p2) {
   return (x1->order - x2->order);
 }
 
-#if DNS_RDATASET_FIXED
-//ZAKKAK lets create a sorter
-// NOT TESTED
-isc_result_t
-dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t **addr_stats)
-{
-  struct xrdata  *x;
-  unsigned char  *rawbuf;
-  unsigned char  *offsetbase;
-  isc_result_t  result;
-  unsigned int  nitems;
-  unsigned int  i;
-  unsigned int   *offsettable;
-  unsigned int  length;
-  dns_rdata_in_a_t rdata_a;
-
-  assert(addr_stats);
-
-  nitems = dns_rdataset_count(rdataset);
-
-  if (nitems != 0) {
-    x = malloc(nitems * sizeof(struct xrdata));
-  } else
-    x = NULL;
-
-//   fprintf(stderr, "addr_stats=%p\n", addr_stats);
-  /*
-   * Save all of the rdata members into an array.
-   */
-  result = dns_rdataset_first(rdataset);
-  if (result != ISC_R_SUCCESS && result != ISC_R_NOMORE)
-    goto free_rdatas;
-  for (i = 0; i < nitems && result == ISC_R_SUCCESS; i++) {
-    INSIST(result == ISC_R_SUCCESS);
-    dns_rdata_init(&x[i].rdata);
-    dns_rdataset_current(rdataset, &x[i].rdata);
-    dns_rdata_tostruct(&x[i].rdata, &rdata_a, NULL);
-      
-    x[i].order = nitems-1-i;
-    fprintf(stderr, "current order %d\n", x[i].order);
-    
-    result = dns_rdataset_next(rdataset);
-  }
-  if (result != ISC_R_NOMORE)
-    goto free_rdatas;
-  if (i != nitems) {
-    /*
-     * Somehow we iterated over fewer rdatas than
-     * dns_rdataset_count() said there were!
-     */
-    result = ISC_R_FAILURE;
-    goto free_rdatas;
-  }
-
-  /*
-   * order x
-   */
-  qsort(x, nitems, sizeof(struct xrdata), cmp);
-
-  /*
-   * Allocate the memory, set up a buffer, start copying in
-   * data.
-   */
-  rawbuf = rdataset->private3;
-
-  /* Allocate temporary offset table. */
-  offsettable = malloc(nitems * sizeof(unsigned int));
-  memset(offsettable, 0, nitems * sizeof(unsigned int));
-
-//   rawbuf += reservelen;
-  offsetbase = rawbuf;
-
-  *rawbuf++ = (nitems & 0xff00) >> 8;
-  *rawbuf++ = (nitems & 0x00ff);
-
-  /* Skip load order table.  Filled in later. */
-  rawbuf += nitems * 4;
-
-  for (i = 0; i < nitems; i++) {
-    if (x[i].rdata.data == NULL)
-      continue;
-    offsettable[x[i].order] = rawbuf - offsetbase;
-    length = x[i].rdata.length;
-    if (rdataset->type == dns_rdatatype_rrsig)
-      length++;
-    *rawbuf++ = (length & 0xff00) >> 8;
-    *rawbuf++ = (length & 0x00ff);
-    rawbuf += 2;  /* filled in later */
-    /*
-     * Store the per RR meta data.
-     */
-    if (rdataset->type == dns_rdatatype_rrsig) {
-      *rawbuf++ |= (x[i].rdata.flags & DNS_RDATA_OFFLINE) ?
-              DNS_RDATASLAB_OFFLINE : 0;
-    }
-    memcpy(rawbuf, x[i].rdata.data, x[i].rdata.length);
-    rawbuf += x[i].rdata.length;
-  }
-
-  fillin_offsets(offsetbase, offsettable, nitems);
-  free(offsettable);
-
-  result = ISC_R_SUCCESS;
-
-
-  /*
-   * Reset iterator state.
-   */
-  rdataset->privateuint4 = 0;
-  rdataset->private5 = NULL;
-  
- free_rdatas:
-  if (x != NULL)
-    free(x);
-  return result;
-}
-#endif
-
 isc_result_t
 dns_rdataslab_fromrdataset(dns_rdataset_t *rdataset, isc_mem_t *mctx,
 			   isc_region_t *region, unsigned int reservelen)
@@ -603,6 +485,156 @@ dns_rdataslab_tordataset(unsigned char *slab, unsigned int reservelen,
 	rdataset->privateuint4 = 0;
 	rdataset->private5 = NULL;
 }
+
+#if DNS_RDATASET_FIXED
+//ZAKKAK lets create a sorter
+//FIXME
+//TODO make it more efficient by just changing the offsettable and not memcpy
+isc_result_t
+dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t **addr_stats)
+{
+  struct xrdata  *x;
+  unsigned char  *rawbuf;
+  unsigned char  *offsetbase;
+  isc_result_t  result = ISC_R_SUCCESS;
+  unsigned int  nitems;
+  unsigned int  i;
+  unsigned int   *offsettable;
+  unsigned int  length;
+  dns_rdata_in_a_t rdata_a;
+  dns_rdata_t tmp_rdata;
+
+  assert(addr_stats);
+
+  nitems = dns_rdataset_count(rdataset);
+
+  if (nitems > 1) {
+    x = malloc(nitems * sizeof(struct xrdata));
+  } else
+    return result;
+
+//   fprintf(stderr, "addr_stats=%p\n", addr_stats);
+  /*
+   * Save all of the rdata members into an array.
+   */
+  result = dns_rdataset_first(rdataset);
+  if (result != ISC_R_SUCCESS && result != ISC_R_NOMORE)
+    goto free_rdatas;
+  for (i = 0; i < nitems && result == ISC_R_SUCCESS; i++) {
+    INSIST(result == ISC_R_SUCCESS);
+    dns_rdata_init(&tmp_rdata);
+    dns_rdataset_current(rdataset, &tmp_rdata);
+
+    x[i].rdata.data = malloc(tmp_rdata.length);
+
+    memcpy(x[i].rdata.data, tmp_rdata.data, tmp_rdata.length);
+    x[i].rdata.length = tmp_rdata.length;
+    x[i].rdata.rdclass = tmp_rdata.rdclass;
+    x[i].rdata.type = tmp_rdata.type;
+    x[i].rdata.flags = tmp_rdata.flags;
+
+    x[i].order = nitems-i;
+    
+    dns_rdata_tostruct(&tmp_rdata, &rdata_a, NULL);
+    fprintf(stderr, "Current[%d]=%lu\n", i, rdata_a.in_addr.s_addr);
+//     fprintf(stderr, "current order %d\n", x[i].order);
+
+    result = dns_rdataset_next(rdataset);
+  }
+  if (result != ISC_R_NOMORE)
+    goto free_rdatas;
+  if (i != nitems) {
+    /*
+     * Somehow we iterated over fewer rdatas than
+     * dns_rdataset_count() said there were!
+     */
+    result = ISC_R_FAILURE;
+    goto free_rdatas;
+  }
+
+  /*
+   * order x
+   */
+  qsort(x, nitems, sizeof(struct xrdata), cmp);
+
+  /*
+   * Allocate the memory, set up a buffer, start copying in
+   * data.
+   */
+  rawbuf = rdataset->private3;
+
+  /* Allocate temporary offset table. */
+  offsettable = malloc(nitems * sizeof(unsigned int));
+  memset(offsettable, 0, nitems * sizeof(unsigned int));
+
+//   rawbuf += reservelen;
+  offsetbase = rawbuf;
+
+  *rawbuf++ = (nitems & 0xff00) >> 8;
+  *rawbuf++ = (nitems & 0x00ff);
+
+  /* Skip load order table.  Filled in later. */
+  rawbuf += nitems * 4;
+
+  for (i = 0; i < nitems; i++) {
+
+//     int k;
+//   for (k = 0; k < nitems; k++) {
+//     dns_rdata_tostruct(&x[k].rdata, &rdata_a, NULL);
+//     fprintf(stderr, "---Current[%d]=%lu\n", k, rdata_a.in_addr.s_addr);
+//   }
+  
+    if (x[i].rdata.data == NULL)
+      continue;
+    offsettable[x[i].order] = rawbuf - offsetbase;
+    length = x[i].rdata.length;
+    if (rdataset->type == dns_rdatatype_rrsig)
+      length++;
+    *rawbuf++ = (length & 0xff00) >> 8;
+    *rawbuf++ = (length & 0x00ff);
+    rawbuf += 2;  /* filled in later */
+    /*
+     * Store the per RR meta data.
+     */
+    if (rdataset->type == dns_rdatatype_rrsig) {
+      *rawbuf++ |= (x[i].rdata.flags & DNS_RDATA_OFFLINE) ?
+              DNS_RDATASLAB_OFFLINE : 0;
+    }
+    memcpy(rawbuf, x[i].rdata.data, x[i].rdata.length);
+    dns_rdata_tostruct(&x[i].rdata, &rdata_a, NULL);
+    fprintf(stderr, "Current[%d]=%lu\n", i, rdata_a.in_addr.s_addr);
+    free(x[i].rdata.data);
+    rawbuf += x[i].rdata.length;
+  }
+
+  fillin_offsets(offsetbase, offsettable, nitems);
+  free(offsettable);
+
+  result = ISC_R_SUCCESS;
+
+  /* TODO
+   * Set TTL (dns_ttl_t)
+   * typedef isc_uint32_t dns_ttl_t;
+   * s ms? what?
+   */
+//   rdataset->ttl = UPDATE_INTERVAL;
+
+  /*
+   * set the methods for rdataslab
+   */
+  rdataset->methods = &rdataset_methods;
+  /*
+   * Reset iterator state.
+   */
+  rdataset->privateuint4 = 0;
+  rdataset->private5 = NULL;
+
+ free_rdatas:
+  if (x != NULL)
+    free(x);
+  return result;
+}
+#endif
 
 unsigned int
 dns_rdataslab_size(unsigned char *slab, unsigned int reservelen) {
