@@ -224,28 +224,30 @@ static void ns_profiler_poll_workers(node_t * cur)
       tmp->cpu_load = cur->naddrs-i;
       tmp->io_load = cur->naddrs-i;
       tmp->net_load = cur->naddrs-i;
-      //TODO here use the ip of th emachine running the workers' simulator
-//     ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
-//     if (connectToServer(sockfd, ip, port)) {
-//       fprintf(stderr, "Could not connect to worker %s\n", ip);
-//       close(sockfd);
-//       tmp->cpu_load = 255;
-//       tmp->io_load = 255;
-//       tmp->net_load = 255;
-//       return;
-//     };
-//     response = sendMessage(message, sockfd);
-//     if (parse_response(response, tmp)) {
-//       fprintf(stderr, "Checksum Error in worker's message\n");
-//       // handle this somehow? The worker is down put it last in the list ;)
-//       tmp->cpu_load = 255;
-//       tmp->io_load = 255;
-//       tmp->net_load = 255;
-//     }
-//     //printf("%s\n",message);
-//     close(sockfd);
-//     free(message);
-//     free(response);
+      //TODO here use the ip of the machine running the workers' simulator
+#if 0
+    ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
+    if (connectToServer(sockfd, ip, port)) {
+      fprintf(stderr, "Could not connect to worker %s\n", ip);
+      close(sockfd);
+      tmp->cpu_load = 255;
+      tmp->io_load = 255;
+      tmp->net_load = 255;
+      return;
+    };
+    response = sendMessage(message, sockfd);
+    if (parse_response(response, tmp)) {
+      fprintf(stderr, "Checksum Error in worker's message\n");
+      // handle this somehow? The worker is down put it last in the list ;)
+      tmp->cpu_load = 255;
+      tmp->io_load = 255;
+      tmp->net_load = 255;
+    }
+    //printf("%s\n",message);
+    close(sockfd);
+    free(message);
+    free(response);
+#endif
     return;
   }
 }
@@ -268,24 +270,32 @@ static int cmp(const void *v_a, const void *v_b)
 
 static void ns_profiler_update_addrs()
 {
-  node_t *current = list_g;
-//   int i, bucket;
+  node_t *current;
 
   while (1) {
     sleep(UPDATE_INTERVAL);
     DPRINT("Here we go again!!!\n");
+    current = list_g;
 
     while (current) {
 
-      ns_profiler_poll_workers(current);
-      qsort(current->addr_stats, current->naddrs, sizeof(ns_profiler_a_node_t), cmp);
+      if ( current->naddrs > 0 ) {
+        DPRINT("\tPolling the workers\n");
+        ns_profiler_poll_workers(current);
+        DPRINT("\t\tdone\n");
+        DPRINT("\tSorting our local stats\n");
+        qsort(current->addr_stats, current->naddrs, sizeof(ns_profiler_a_node_t), cmp);
+        DPRINT("\t\tdone\n");
 
-      //TODO find a way to sort rdatasets :S
-      // looks like we are going to have to move bytes in the rdatasets region
-      //TODO LOCK rdataset before sorting
-      dns_rdataslab_sort_fromrdataset(&current->rdataset, current->addr_stats);
-
-      current = list_g->next;
+        //TODO find a way to sort rdatasets :S
+        // looks like we are going to have to move bytes in the rdatasets region
+        //TODO LOCK rdataset before sorting
+        DPRINT("\tSorting the rdataset\n");
+        dns_rdataslab_sort_fromrdataset(&current->rdataset, current->addr_stats);
+        DPRINT("\t\tdone\n");
+      }
+      
+      current = current->next;
     }
   }
 }
@@ -295,6 +305,7 @@ static isc_threadresult_t ns_profiler_thread()
   isc_result_t result;
   dns_view_t *view;
   uint8_t zone_cnt=0;
+  int node_cnt=0;
 
   // For our book keeping
   node_t *value;
@@ -393,14 +404,18 @@ static isc_threadresult_t ns_profiler_thread()
                     dns_rdataset_init(&rdataset);
                     dns_rdatasetiter_current(rdsit, &rdataset);
 
+
+                //TODO find a way to skip builtin rdatasets
   #if 1
                     // For each rdataset create a node in ht_g
                     value = (node_t *) malloc(sizeof(node_t));
+                    DPRINT("Alloc value: %p\n", value);
                     dns_rdataset_init(&value->rdataset);
                     dns_rdataset_clone(&rdataset, &value->rdataset);
                     value->naddrs = 0;
                     value->next = list_g;
                     list_g = value;
+                    ++node_cnt;
   #endif
 
                     for (result = dns_rdataset_first(&rdataset);
@@ -416,6 +431,7 @@ static isc_threadresult_t ns_profiler_thread()
 
                         // push the rdatas in the node
                         value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
+                        DPRINT("Alloc addr_stats: %p\n", value->addr_stats[value->naddrs]);
                         memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
                         memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
     //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
@@ -442,12 +458,13 @@ static isc_threadresult_t ns_profiler_thread()
         }
       }
       
-
       DPRINT("Found %d zones in view \"%s\"\n", zone_cnt, view->name);
     }
 
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
   }
+  
+  DPRINT("Found %d nodes\n", node_cnt);
 
   ns_profiler_update_addrs();
   
