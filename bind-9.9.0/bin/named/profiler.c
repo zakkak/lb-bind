@@ -54,7 +54,7 @@
 #define CALC_LOAD(x) (x->cpu_load*CPU + x->io_load*IO + x->net_load*NET)
 
 #define MYPRINT(...) fprintf(stderr, __VA_ARGS__)
-#define EPRINT(...) do{ MYPRINT(__VA_ARGS__); exit(1); }while(0)
+#define EPRINT(...) do{ fprintf(stderr, "\033[1;31m"); MYPRINT(__VA_ARGS__); fprintf(stderr, "\033[m"); exit(1); }while(0)
 
 #if 1
 #define DPRINT MYPRINT
@@ -304,8 +304,8 @@ static isc_threadresult_t ns_profiler_thread()
 
   assert((CPU + IO + NET) == 1.0f);
   
-  //delay us for 5 seconds
-  sleep(5);
+  //delay us, to let named initialize
+  sleep(1);
 
   // Go through all views and initialize the hashtable
   for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {    
@@ -321,7 +321,7 @@ static isc_threadresult_t ns_profiler_thread()
     dns_rbtnode_t *rbt_node;
     
     // For the db iterator
-    dns_dbiterator_t *dbiterator = NULL;
+    dns_dbiterator_t *dbiterator;
     dns_rdataset_t rdataset;
     dns_rdatasetiter_t *rdsit = NULL;
     dns_dbnode_t *db_node;
@@ -348,81 +348,91 @@ static isc_threadresult_t ns_profiler_thread()
       EPRINT("start not found!\n");
     else {
       // now go through the zonetable
-      for (;;) {
+      for (;;result = dns_rbtnodechain_next(&chain, &foundname, origin)) {
         rbt_node = NULL;
         if (result == ISC_R_SUCCESS || result == DNS_R_NEWORIGIN) {
           result = dns_rbtnodechain_current(&chain, &foundname, origin, &rbt_node);
           if (result == ISC_R_SUCCESS) {
             zone = rbt_node->data;
-            if (zone != NULL) {
+            if ( (zone != NULL) && (zone->type == dns_zone_master) ) {
               char tmp[256];
               dns_zone_name(zone, tmp, sizeof(tmp));
-              DPRINT("Current zone=\"%s\"", tmp);
+              DPRINT("Current zone=\"%s\"\n", tmp);
               ++zone_cnt;
               // GO through the zone's db
               dns_fixedname_init(&fixed_i);
               name_i = dns_fixedname_name(&fixed_i);
-              db_node = NULL;
-              
-              result = dns_db_createiterator(zone->db, 0, &dbiterator);
-              if (result != ISC_R_SUCCESS)
-                EPRINT("Couln't create Iterator\n");
 
-              for (result = dns_dbiterator_first(dbiterator);
-                  result == ISC_R_SUCCESS;
-                  result = dns_dbiterator_next(dbiterator)) {
-                result = dns_dbiterator_current(dbiterator, &db_node, name_i);
+              if ( DNS_DB_VALID(zone->db) ) {
+                dbiterator = NULL;
+                result = dns_db_createiterator(zone->db, 0, &dbiterator);
                 if (result != ISC_R_SUCCESS)
-                  continue;
+                  if ( result == ISC_R_NOTIMPLEMENTED) {
+                    DPRINT("Builtin probably, skipping iterator\n");
+                    continue;
+                  } else
+                    EPRINT("Couldn't create Iterator\n");
 
-                result = dns_db_allrdatasets(zone->db, db_node, NULL, 0, &rdsit);
-                if (result != ISC_R_SUCCESS)
-                  continue;
-
-                // Now go through the rdatasets
-                for (result = dns_rdatasetiter_first(rdsit);
+                for (result = dns_dbiterator_first(dbiterator);
                     result == ISC_R_SUCCESS;
-                    result = dns_rdatasetiter_next(rdsit)) {
-                  // get the current dataset
-	          dns_rdataset_init(&rdataset);
-                  dns_rdatasetiter_current(rdsit, &rdataset);
-                  
-#if 1
-                  // For each rdataset create a node in ht_g
-                  value = (node_t *) malloc(sizeof(node_t));
-                  dns_rdataset_init(&value->rdataset);
-                  dns_rdataset_clone(&rdataset, &value->rdataset);
-                  value->naddrs = 0;
-                  value->next = list_g;
-                  list_g = value;
-#endif
+                    result = dns_dbiterator_next(dbiterator)) {
+                  db_node = NULL;
+                  result = dns_dbiterator_current(dbiterator, &db_node, name_i);
+                  if (result != ISC_R_SUCCESS)
+                    continue;
 
-                  for (result = dns_rdataset_first(&rdataset);
+                  result = dns_db_allrdatasets(zone->db, db_node, NULL, 0, &rdsit);
+                  if (result != ISC_R_SUCCESS)
+                    continue;
+
+                  // Now go through the rdatasets
+                  for (result = dns_rdatasetiter_first(rdsit);
                       result == ISC_R_SUCCESS;
-                      result = dns_rdataset_next(&rdataset)) {
+                      result = dns_rdatasetiter_next(rdsit)) {
+                    // get the current dataset
+                    dns_rdataset_init(&rdataset);
+                    dns_rdatasetiter_current(rdsit, &rdataset);
 
-                    dns_rdata_init(&rdata);
-                    dns_rdataset_current(&rdataset, &rdata);
-#if 1
-                    if (rdata.type == dns_rdatatype_a) {
-                      result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
-                      RUNTIME_CHECK(result == ISC_R_SUCCESS);
-                    
-                      // push the rdatas in the node
-                      value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
-                      memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
-                      memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
-  //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
+  #if 1
+                    // For each rdataset create a node in ht_g
+                    value = (node_t *) malloc(sizeof(node_t));
+                    dns_rdataset_init(&value->rdataset);
+                    dns_rdataset_clone(&rdataset, &value->rdataset);
+                    value->naddrs = 0;
+                    value->next = list_g;
+                    list_g = value;
+  #endif
+
+                    for (result = dns_rdataset_first(&rdataset);
+                        result == ISC_R_SUCCESS;
+                        result = dns_rdataset_next(&rdataset)) {
+
+                      dns_rdata_init(&rdata);
+                      dns_rdataset_current(&rdataset, &rdata);
+  #if 1
+                      if (rdata.type == dns_rdatatype_a) {
+                        result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
+                        RUNTIME_CHECK(result == ISC_R_SUCCESS);
+
+                        // push the rdatas in the node
+                        value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
+                        memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
+                        memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
+    //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
+                      }
+  #endif
                     }
-#endif
+
                   }
-                  
+
+                  dns_rdatasetiter_destroy(&rdsit);
                 }
-                
-                dns_rdatasetiter_destroy(&rdsit);
+
+                dns_dbiterator_destroy(&dbiterator);
+              } else {
+                DPRINT("Non valid zone db, skipping iterator\n");
+                continue;
               }
-              
-              dns_dbiterator_destroy(&dbiterator);
             }
           }
         } else {
@@ -430,12 +440,10 @@ static isc_threadresult_t ns_profiler_thread()
             EPRINT("UNEXEPCTED ITERATION ERROR: %s", dns_result_totext(result));
           break;
         }
-
-        result = dns_rbtnodechain_next(&chain, &foundname, origin);
       }
       
 
-      DPRINT("Found %d zones\n", zone_cnt);
+      DPRINT("Found %d zones in view \"%s\"\n", zone_cnt, view->name);
     }
 
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);

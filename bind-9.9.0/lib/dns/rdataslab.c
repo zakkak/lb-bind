@@ -230,10 +230,8 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
     rawbuf += x[i].rdata.length;
   }
 
-#if DNS_RDATASET_FIXED
   fillin_offsets(offsetbase, offsettable, nitems);
   free(offsettable);
-#endif
 
   result = ISC_R_SUCCESS;
 
