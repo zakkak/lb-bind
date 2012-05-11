@@ -22,6 +22,7 @@
 #include <config.h>
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include <isc/mem.h>
 #include <isc/region.h>
@@ -142,10 +143,12 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
   unsigned char  *offsetbase;
   isc_result_t  result;
   unsigned int  nitems;
-  unsigned int  i, k;
+  unsigned int  i;
   unsigned int   *offsettable;
   unsigned int  length;
   dns_rdata_in_a_t rdata_a;
+
+  assert(addr_stats);
 
   nitems = dns_rdataset_count(rdataset);
 
@@ -154,6 +157,7 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
   } else
     x = NULL;
 
+//   fprintf(stderr, "addr_stats=%p\n", addr_stats);
   /*
    * Save all of the rdata members into an array.
    */
@@ -165,12 +169,9 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
     dns_rdata_init(&x[i].rdata);
     dns_rdataset_current(rdataset, &x[i].rdata);
     dns_rdata_tostruct(&x[i].rdata, &rdata_a, NULL);
-    
-    for( k=0; k<nitems; ++k)
-      if(addr_stats[k]->in_addr.s_addr == rdata_a.in_addr.s_addr)
-        break;
       
-    x[i].order = k;
+    x[i].order = nitems-1-i;
+    fprintf(stderr, "current order %d\n", x[i].order);
     
     result = dns_rdataset_next(rdataset);
   }
