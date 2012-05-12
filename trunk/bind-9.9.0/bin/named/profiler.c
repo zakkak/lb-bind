@@ -44,7 +44,7 @@
 #include <openssl/evp.h>
 
 // UPDATE_INTERVAL in seconds
-// TODO set TTL the same
+// TODOZ set TTL the same as UPDATE_INTERVAL lib/dns/rdataslab.c:705
 #define UPDATE_INTERVAL 5
 
 // assert( (CPU+IO+NET)==1.0f );
@@ -77,7 +77,7 @@
 typedef struct node {
 //   dns_adbname_t *key;
   dns_rdataset_t rdataset;
-  ns_profiler_a_node_t *addr_stats[LWRES_MAX_ADDRS];
+  ns_profiler_a_node_t *addr_stats;
   int naddrs;
   struct node *next;
 } node_t;
@@ -212,44 +212,48 @@ static char *sendMessage(char *orig_message, int sockfd)
 static void ns_profiler_poll_workers(node_t * cur)
 {
   int i;
-  ns_profiler_a_node_t *tmp;
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   char *ip;
 //   char *response, *message = strdup("REQSTATS");
   int port = 2113;
 
   for (i = 0; i < cur->naddrs; ++i) {
-    tmp = cur->addr_stats[i];
 
-      tmp->cpu_load = cur->naddrs-i;
-      tmp->io_load = cur->naddrs-i;
-      tmp->net_load = cur->naddrs-i;
-      //TODO here use the ip of the machine running the workers' simulator
-#if 0
-    ip = inet_ntoa(tmp->nh->entry->sockaddr.type.sin.sin_addr); //here i try to get the ip, not sure that's fine
+#if 1
+      cur->addr_stats[i].cpu_load = (double)(cur->naddrs-i);
+      cur->addr_stats[i].io_load = (double)(cur->naddrs-i);
+      cur->addr_stats[i].net_load = (double)(cur->naddrs-i);
+#elif 1
+      cur->addr_stats[i].cpu_load = i;
+      cur->addr_stats[i].io_load = i;
+      cur->addr_stats[i].net_load = i;
+#else
+      //FIXMEZ here use the ip of the machine running the workers' simulator
+//     ip = inet_ntoa(cur->addr_stats[i].in_addr); //here i try to get the ip, not sure that's fine
+    ip = the hard-coded ip of the machine simulating the workers;
     if (connectToServer(sockfd, ip, port)) {
       fprintf(stderr, "Could not connect to worker %s\n", ip);
       close(sockfd);
-      tmp->cpu_load = 255;
-      tmp->io_load = 255;
-      tmp->net_load = 255;
+      cur->addr_stats[i].cpu_load = 255.0f;
+      cur->addr_stats[i].io_load = 255.0f;
+      cur->addr_stats[i].net_load = 255.0f;
       return;
     };
     response = sendMessage(message, sockfd);
     if (parse_response(response, tmp)) {
       fprintf(stderr, "Checksum Error in worker's message\n");
       // handle this somehow? The worker is down put it last in the list ;)
-      tmp->cpu_load = 255;
-      tmp->io_load = 255;
-      tmp->net_load = 255;
+      cur->addr_stats[i].cpu_load = 255.0f;
+      cur->addr_stats[i].io_load = 255.0f;
+      cur->addr_stats[i].net_load = 255.0f;
     }
     //printf("%s\n",message);
     close(sockfd);
-    free(message);
-    free(response);
 #endif
-    return;
   }
+//   free(message);
+//   free(response);
+  return;
 }
 
 /*** END OF WORKER COMMUNICATION ***/
@@ -257,15 +261,15 @@ static void ns_profiler_poll_workers(node_t * cur)
 static int cmp(const void *v_a, const void *v_b)
 {
   const ns_profiler_a_node_t *a, *b;
-  int s_a, s_b;
+  double s_a, s_b;
 
   a = (const ns_profiler_a_node_t *) v_a;
   b = (const ns_profiler_a_node_t *) v_b;
-
+  
   s_a = CALC_LOAD(a);
   s_b = CALC_LOAD(b);
 
-  return s_a - s_b;
+  return (int)(s_a - s_b);
 }
 
 static void ns_profiler_update_addrs()
@@ -287,9 +291,7 @@ static void ns_profiler_update_addrs()
         qsort(current->addr_stats, current->naddrs, sizeof(ns_profiler_a_node_t), cmp);
         DPRINT("\t\tdone\n");
 
-        //TODO find a way to sort rdatasets :S
-        // looks like we are going to have to move bytes in the rdatasets region
-        //TODO LOCK rdataset before sorting
+        //FIXMEZ LOCK rdataset before sorting (not sure if it is necessary)
         DPRINT("\tSorting the rdataset\n");
         dns_rdataslab_sort_fromrdataset(&current->rdataset, current->addr_stats);
         DPRINT("\t\tdone\n");
@@ -405,19 +407,26 @@ static isc_threadresult_t ns_profiler_thread()
                     dns_rdatasetiter_current(rdsit, &rdataset);
 
 
-                //TODO find a way to skip builtin rdatasets
+                //TODOZ find a way to skip builtin rdatasets
   #if 1
                     // For each rdataset create a node in ht_g
                     value = (node_t *) malloc(sizeof(node_t));
                     DPRINT("Alloc value: %p\n", value);
                     dns_rdataset_init(&value->rdataset);
                     dns_rdataset_clone(&rdataset, &value->rdataset);
-                    value->naddrs = 0;
                     value->next = list_g;
+                    value->naddrs = dns_rdataset_count(&rdataset);
+                    value->addr_stats = (ns_profiler_a_node_t *) malloc(value->naddrs * sizeof(ns_profiler_a_node_t));
+                    DPRINT("Alloc addr_stats: %p\n", value->addr_stats);
+                    memset(value->addr_stats, 0, (value->naddrs * sizeof(ns_profiler_a_node_t)));
                     list_g = value;
                     ++node_cnt;
   #endif
 
+                    // transform the rdataset
+                    dns_rdataslab_transformrdataset(&rdataset, value->addr_stats);
+
+                    int i=0;
                     for (result = dns_rdataset_first(&rdataset);
                         result == ISC_R_SUCCESS;
                         result = dns_rdataset_next(&rdataset)) {
@@ -430,10 +439,7 @@ static isc_threadresult_t ns_profiler_thread()
                         RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
                         // push the rdatas in the node
-                        value->addr_stats[value->naddrs] = (ns_profiler_a_node_t *) malloc(sizeof(ns_profiler_a_node_t));
-                        DPRINT("Alloc addr_stats: %p\n", value->addr_stats[value->naddrs]);
-                        memset(value->addr_stats[value->naddrs], 0, (sizeof(ns_profiler_a_node_t)));
-                        memcpy(&value->addr_stats[value->naddrs++]->in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
+                        memcpy(&value->addr_stats[i++].in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
     //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
                       }
   #endif

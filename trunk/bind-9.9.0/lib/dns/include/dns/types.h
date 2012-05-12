@@ -397,6 +397,7 @@ typedef struct ns_profiler_a_node {
 //   isc_sockaddr_t sa;      // worker's sockaddr
 //   dns_adbnamehook_t *nh;
   struct in_addr in_addr;
+  unsigned int offset;
   //uint8_t cpu_load, io_load, net_load;  // Load percentages
   double cpu_load, io_load, net_load;
 } ns_profiler_a_node_t;
