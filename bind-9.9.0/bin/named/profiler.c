@@ -407,7 +407,7 @@ static isc_threadresult_t ns_profiler_thread()
                     dns_rdatasetiter_current(rdsit, &rdataset);
 
 
-                //TODOZ find a way to skip builtin rdatasets
+                //TODOZ find a way to skip builtin rdatasets (this is for efficiency)
   #if 1
                     // For each rdataset create a node in ht_g
                     value = (node_t *) malloc(sizeof(node_t));
