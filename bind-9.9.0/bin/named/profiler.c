@@ -90,13 +90,13 @@ node_t *list_g;
 
 /*** WORKER COMMUNICATION FUNCTIONS ***/
 
-static void error(const char *msg)
+void error(const char *msg)
 {
   perror(msg);
   exit(0);
 }
 
-static void print2hex(unsigned const char *string, int size)
+void print2hex(unsigned const char *string, int size)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -104,7 +104,7 @@ static void print2hex(unsigned const char *string, int size)
   printf("\n");
 }
 
-static char *md5_digest(const char *input)
+char *md5_digest(const char *input)
 {
   EVP_MD_CTX mdctx;
   const EVP_MD *md;
@@ -128,18 +128,17 @@ static char *md5_digest(const char *input)
   EVP_DigestFinal_ex(&mdctx, output, &output_len);
   EVP_MD_CTX_cleanup(&mdctx);
 
-  /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */
-  return (char*)output;
+  /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */  
+	return (char*)output;
 }
 
-static int parse_response(char *response, ns_profiler_a_node_t * currnode)
+int parse_response(char *response, ns_profiler_a_node_t * currnode)
 {
   char *timestamp;
   double stats[3];
   char *message = strtok(response, "#");
   char *msg_digest = strtok(NULL, "#");
   int i;
-  //printf("message=%s\n", message);
   //printf("?=%s", msg_digest);
   //print2hex(msg_digest, 16);
   char *digest = md5_digest(message);
@@ -153,15 +152,19 @@ static int parse_response(char *response, ns_profiler_a_node_t * currnode)
     stats[i] = atof(strtok(NULL, "$"));
   }
   timestamp = strtok(NULL, "$");
-  DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
-  DPRINT("timestamp=%s\n", timestamp);
+  //DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
+  //DPRINT("timestamp=%s\n", timestamp);
   currnode->io_load = stats[0];
   currnode->cpu_load = stats[1];
   currnode->net_load = stats[2];
+	DPRINT("Verify stats\n");
+	DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
+	DPRINT("\t\tio load=%lf\n", currnode->io_load);
+	DPRINT("\t\tnet load=%lf\n", currnode->net_load);
   return 0;
 }
 
-static int connectToServer(int sockfd, char *ip, int port)
+int connectToServer(int sockfd, char *ip, int port)
 {
   struct sockaddr_in serv_addr;
   struct hostent *server;
@@ -178,13 +181,13 @@ static int connectToServer(int sockfd, char *ip, int port)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-    error("ERROR connecting");
+    //error("ERROR connecting");
     return 1;
   }
   return 0;
 }
 
-static char *sendMessage(char *orig_message, int sockfd)
+char *sendMessage(char *orig_message, int sockfd)
 {
 
   int n;
@@ -194,53 +197,59 @@ static char *sendMessage(char *orig_message, int sockfd)
   bzero(message, 256);
   strcpy(message, orig_message);
   strcat(message, "#");
-  strcat(message, digest);
+	//FIXME: digest contains some rubbish data at the end of string
+	//strncat fixes the issue by copying only the usefull bytes to message
+	//don't know why that happens though 
+  strncat(message, digest, 16);
+	//print2hex(digest, strlen(digest));
+	//DPRINT("\tmessage size=%d\n", strlen(digest));
   n = write(sockfd, message, strlen(message));
-
   if (n < 0)
     error("ERROR writing to socket");
-
   bzero(response, 256);
-  n = read(sockfd, response, 255);
+  //fflush(sockfd);
+	n = recv(sockfd, response, 255, 0);
   if (n < 0)
     error("ERROR reading from socket");
-
+  printf("size=%d\n", n);
   return response;
 }
 
 
-static void ns_profiler_poll_workers(node_t * cur)
+void ns_profiler_poll_workers(node_t *cur)
 {
   int i;
-  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  int sockfd;
   char *ip;
-//   char *response, *message = strdup("REQSTATS");
+  char *response, *message = strdup("REQSTATS");
   int port = 2113;
-
+	DPRINT("\tNumber of addresses to poll %d\n", cur->naddrs);
   for (i = 0; i < cur->naddrs; ++i) {
 
-#if 1
+  	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+#if 0
       cur->addr_stats[i].cpu_load = (double)(cur->naddrs-i);
       cur->addr_stats[i].io_load = (double)(cur->naddrs-i);
       cur->addr_stats[i].net_load = (double)(cur->naddrs-i);
-#elif 1
-      cur->addr_stats[i].cpu_load = i;
-      cur->addr_stats[i].io_load = i;
-      cur->addr_stats[i].net_load = i;
 #else
-      //FIXMEZ here use the ip of the machine running the workers' simulator
-//     ip = inet_ntoa(cur->addr_stats[i].in_addr); //here i try to get the ip, not sure that's fine
-    ip = the hard-coded ip of the machine simulating the workers;
-    if (connectToServer(sockfd, ip, port)) {
+    //FIXME: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
+		ip = inet_ntoa(cur->addr_stats[i].in_addr);
+		//ip = strdup("192.168.1.69");
+		DPRINT("\tPolling ip %s\n", ip);
+    //if(strcmp(ip, "0,0,0,0,") == 0) {
+		//	DPRINT("\tSkipping localhost\n");
+		//	continue;
+		//}
+		if (connectToServer(sockfd, ip, port)) {
       fprintf(stderr, "Could not connect to worker %s\n", ip);
       close(sockfd);
       cur->addr_stats[i].cpu_load = 255.0f;
       cur->addr_stats[i].io_load = 255.0f;
       cur->addr_stats[i].net_load = 255.0f;
-      return;
+      continue;
     };
     response = sendMessage(message, sockfd);
-    if (parse_response(response, tmp)) {
+    if (parse_response(response, &(cur->addr_stats[i]))) {
       fprintf(stderr, "Checksum Error in worker's message\n");
       // handle this somehow? The worker is down put it last in the list ;)
       cur->addr_stats[i].cpu_load = 255.0f;
@@ -248,6 +257,10 @@ static void ns_profiler_poll_workers(node_t * cur)
       cur->addr_stats[i].net_load = 255.0f;
     }
     //printf("%s\n",message);
+		DPRINT("\t%s's Stats\n");
+		DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);
+		DPRINT("\t\tio load=%lf\n", cur->addr_stats[i].io_load);
+		DPRINT("\t\tnet load=%lf\n", cur->addr_stats[i].net_load);
     close(sockfd);
 #endif
   }
