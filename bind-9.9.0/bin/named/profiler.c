@@ -128,8 +128,8 @@ char *md5_digest(const char *input)
   EVP_DigestFinal_ex(&mdctx, output, &output_len);
   EVP_MD_CTX_cleanup(&mdctx);
 
-  /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */  
-	return (char*)output;
+  /* Now output contains the hash value, output_len contains length of output, which is 128 bit or 16 byte in case of MD5 */
+  return (char *) output;
 }
 
 int parse_response(char *response, ns_profiler_a_node_t * currnode)
@@ -157,10 +157,10 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   currnode->io_load = stats[0];
   currnode->cpu_load = stats[1];
   currnode->net_load = stats[2];
-	DPRINT("Verify stats\n");
-	DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
-	DPRINT("\t\tio load=%lf\n", currnode->io_load);
-	DPRINT("\t\tnet load=%lf\n", currnode->net_load);
+  DPRINT("Verify stats\n");
+  DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
+  DPRINT("\t\tio load=%lf\n", currnode->io_load);
+  DPRINT("\t\tnet load=%lf\n", currnode->net_load);
   return 0;
 }
 
@@ -197,18 +197,18 @@ char *sendMessage(char *orig_message, int sockfd)
   bzero(message, 256);
   strcpy(message, orig_message);
   strcat(message, "#");
-	//FIXME: digest contains some rubbish data at the end of string
-	//strncat fixes the issue by copying only the usefull bytes to message
-	//don't know why that happens though 
+  //FIXMEZ: digest contains some rubbish data at the end of string
+  //strncat fixes the issue by copying only the usefull bytes to message
+  //don't know why that happens though 
   strncat(message, digest, 16);
-	//print2hex(digest, strlen(digest));
-	//DPRINT("\tmessage size=%d\n", strlen(digest));
+  //print2hex(digest, strlen(digest));
+  //DPRINT("\tmessage size=%d\n", strlen(digest));
   n = write(sockfd, message, strlen(message));
   if (n < 0)
     error("ERROR writing to socket");
   bzero(response, 256);
   //fflush(sockfd);
-	n = recv(sockfd, response, 255, 0);
+  n = recv(sockfd, response, 255, 0);
   if (n < 0)
     error("ERROR reading from socket");
   printf("size=%d\n", n);
@@ -216,31 +216,31 @@ char *sendMessage(char *orig_message, int sockfd)
 }
 
 
-void ns_profiler_poll_workers(node_t *cur)
+void ns_profiler_poll_workers(node_t * cur)
 {
   int i;
   int sockfd;
   char *ip;
   char *response, *message = strdup("REQSTATS");
   int port = 2113;
-	DPRINT("\tNumber of addresses to poll %d\n", cur->naddrs);
+  DPRINT("\tNumber of addresses to poll %d\n", cur->naddrs);
   for (i = 0; i < cur->naddrs; ++i) {
 
-  	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 #if 0
-      cur->addr_stats[i].cpu_load = (double)(cur->naddrs-i);
-      cur->addr_stats[i].io_load = (double)(cur->naddrs-i);
-      cur->addr_stats[i].net_load = (double)(cur->naddrs-i);
+    cur->addr_stats[i].cpu_load = (double) (cur->naddrs - i);
+    cur->addr_stats[i].io_load = (double) (cur->naddrs - i);
+    cur->addr_stats[i].net_load = (double) (cur->naddrs - i);
 #else
-    //FIXME: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
-		ip = inet_ntoa(cur->addr_stats[i].in_addr);
-		//ip = strdup("192.168.1.69");
-		DPRINT("\tPolling ip %s\n", ip);
+    //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
+    ip = inet_ntoa(cur->addr_stats[i].in_addr);
+    //ip = strdup("192.168.1.69");
+    DPRINT("\tPolling ip %s\n", ip);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
-		//	DPRINT("\tSkipping localhost\n");
-		//	continue;
-		//}
-		if (connectToServer(sockfd, ip, port)) {
+    //  DPRINT("\tSkipping localhost\n");
+    //  continue;
+    //}
+    if (connectToServer(sockfd, ip, port)) {
       fprintf(stderr, "Could not connect to worker %s\n", ip);
       close(sockfd);
       cur->addr_stats[i].cpu_load = 255.0f;
@@ -257,10 +257,11 @@ void ns_profiler_poll_workers(node_t *cur)
       cur->addr_stats[i].net_load = 255.0f;
     }
     //printf("%s\n",message);
-		DPRINT("\t%s's Stats\n");
-		DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);
-		DPRINT("\t\tio load=%lf\n", cur->addr_stats[i].io_load);
-		DPRINT("\t\tnet load=%lf\n", cur->addr_stats[i].net_load);
+    //FIXMEZ "WHO"
+    DPRINT("\t%s's Stats\n", "WHO");
+    DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);
+    DPRINT("\t\tio load=%lf\n", cur->addr_stats[i].io_load);
+    DPRINT("\t\tnet load=%lf\n", cur->addr_stats[i].net_load);
     close(sockfd);
 #endif
   }
@@ -278,11 +279,11 @@ static int cmp(const void *v_a, const void *v_b)
 
   a = (const ns_profiler_a_node_t *) v_a;
   b = (const ns_profiler_a_node_t *) v_b;
-  
+
   s_a = CALC_LOAD(a);
   s_b = CALC_LOAD(b);
 
-  return (int)(s_a - s_b);
+  return (int) (s_a - s_b);
 }
 
 static void ns_profiler_update_addrs()
@@ -296,7 +297,7 @@ static void ns_profiler_update_addrs()
 
     while (current) {
 
-      if ( current->naddrs > 0 ) {
+      if (current->naddrs > 0) {
         DPRINT("\tPolling the workers\n");
         ns_profiler_poll_workers(current);
         DPRINT("\t\tdone\n");
@@ -309,7 +310,7 @@ static void ns_profiler_update_addrs()
         dns_rdataslab_sort_fromrdataset(&current->rdataset, current->addr_stats);
         DPRINT("\t\tdone\n");
       }
-      
+
       current = current->next;
     }
   }
@@ -319,8 +320,8 @@ static isc_threadresult_t ns_profiler_thread()
 {
   isc_result_t result;
   dns_view_t *view;
-  uint8_t zone_cnt=0;
-  int node_cnt=0;
+  uint8_t zone_cnt = 0;
+  int node_cnt = 0;
 
   // For our book keeping
   node_t *value;
@@ -329,12 +330,12 @@ static isc_threadresult_t ns_profiler_thread()
   list_g = NULL;
 
   assert((CPU + IO + NET) == 1.0f);
-  
+
   //delay us, to let named initialize
   sleep(1);
 
   // Go through all views and initialize the hashtable
-  for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {    
+  for (view = ISC_LIST_HEAD(ns_g_server->viewlist); view != NULL; view = ISC_LIST_NEXT(view, link)) {
 
     // wait till load is complete
     while (view->zonetable->loads_pending);
@@ -345,7 +346,7 @@ static isc_threadresult_t ns_profiler_thread()
     dns_fixedname_t fixedorigin;
     dns_zone_t *zone;
     dns_rbtnode_t *rbt_node;
-    
+
     // For the db iterator
     dns_dbiterator_t *dbiterator;
     dns_rdataset_t rdataset;
@@ -357,7 +358,7 @@ static isc_threadresult_t ns_profiler_thread()
     // For the rdataset iterator
     dns_rdata_t rdata;
     dns_rdata_in_a_t rdata_a;
-    
+
     dns_rbtnodechain_init(&chain, view->zonetable->table->mctx);
 
     dns_name_init(&foundname, NULL);
@@ -374,13 +375,13 @@ static isc_threadresult_t ns_profiler_thread()
       EPRINT("start not found!\n");
     else {
       // now go through the zonetable
-      for (;;result = dns_rbtnodechain_next(&chain, &foundname, origin)) {
+      for (;; result = dns_rbtnodechain_next(&chain, &foundname, origin)) {
         rbt_node = NULL;
         if (result == ISC_R_SUCCESS || result == DNS_R_NEWORIGIN) {
           result = dns_rbtnodechain_current(&chain, &foundname, origin, &rbt_node);
           if (result == ISC_R_SUCCESS) {
             zone = rbt_node->data;
-            if ( (zone != NULL) && (zone->type == dns_zone_master) ) {
+            if ((zone != NULL) && (zone->type == dns_zone_master)) {
               char tmp[256];
               dns_zone_name(zone, tmp, sizeof(tmp));
               DPRINT("Current zone=\"%s\"\n", tmp);
@@ -389,19 +390,18 @@ static isc_threadresult_t ns_profiler_thread()
               dns_fixedname_init(&fixed_i);
               name_i = dns_fixedname_name(&fixed_i);
 
-              if ( DNS_DB_VALID(zone->db) ) {
+              if (DNS_DB_VALID(zone->db)) {
                 dbiterator = NULL;
                 result = dns_db_createiterator(zone->db, 0, &dbiterator);
                 if (result != ISC_R_SUCCESS)
-                  if ( result == ISC_R_NOTIMPLEMENTED) {
+                  if (result == ISC_R_NOTIMPLEMENTED) {
                     DPRINT("Builtin probably, skipping iterator\n");
                     continue;
                   } else
                     EPRINT("Couldn't create Iterator\n");
 
                 for (result = dns_dbiterator_first(dbiterator);
-                    result == ISC_R_SUCCESS;
-                    result = dns_dbiterator_next(dbiterator)) {
+                     result == ISC_R_SUCCESS; result = dns_dbiterator_next(dbiterator)) {
                   db_node = NULL;
                   result = dns_dbiterator_current(dbiterator, &db_node, name_i);
                   if (result != ISC_R_SUCCESS)
@@ -413,15 +413,14 @@ static isc_threadresult_t ns_profiler_thread()
 
                   // Now go through the rdatasets
                   for (result = dns_rdatasetiter_first(rdsit);
-                      result == ISC_R_SUCCESS;
-                      result = dns_rdatasetiter_next(rdsit)) {
+                       result == ISC_R_SUCCESS; result = dns_rdatasetiter_next(rdsit)) {
                     // get the current dataset
                     dns_rdataset_init(&rdataset);
                     dns_rdatasetiter_current(rdsit, &rdataset);
 
 
-                //TODOZ find a way to skip builtin rdatasets (this is for efficiency)
-  #if 1
+                    //TODOZ find a way to skip builtin rdatasets (this is for efficiency)
+#if 1
                     // For each rdataset create a node in ht_g
                     value = (node_t *) malloc(sizeof(node_t));
                     DPRINT("Alloc value: %p\n", value);
@@ -434,28 +433,27 @@ static isc_threadresult_t ns_profiler_thread()
                     memset(value->addr_stats, 0, (value->naddrs * sizeof(ns_profiler_a_node_t)));
                     list_g = value;
                     ++node_cnt;
-  #endif
+#endif
 
                     // transform the rdataset
                     dns_rdataslab_transformrdataset(&rdataset, value->addr_stats);
 
-                    int i=0;
+                    int i = 0;
                     for (result = dns_rdataset_first(&rdataset);
-                        result == ISC_R_SUCCESS;
-                        result = dns_rdataset_next(&rdataset)) {
+                         result == ISC_R_SUCCESS; result = dns_rdataset_next(&rdataset)) {
 
                       dns_rdata_init(&rdata);
                       dns_rdataset_current(&rdataset, &rdata);
-  #if 1
+#if 1
                       if (rdata.type == dns_rdatatype_a) {
                         result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
                         RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
                         // push the rdatas in the node
                         memcpy(&value->addr_stats[i++].in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
-    //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
+                        //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
                       }
-  #endif
+#endif
                     }
 
                   }
@@ -476,21 +474,22 @@ static isc_threadresult_t ns_profiler_thread()
           break;
         }
       }
-      
+
       DPRINT("Found %d zones in view \"%s\"\n", zone_cnt, view->name);
     }
 
     RWUNLOCK(&view->zonetable->rwlock, isc_rwlocktype_read);
   }
-  
+
   DPRINT("Found %d nodes\n", node_cnt);
 
   ns_profiler_update_addrs();
-  
-  return ((isc_threadresult_t)0);
+
+  return ((isc_threadresult_t) 0);
 }
 
-void ns_profiler_init(){
+void ns_profiler_init()
+{
   isc_thread_t thread;
   isc_thread_create(ns_profiler_thread, NULL, &thread);
 }
