@@ -187,7 +187,7 @@ int connectToServer(int sockfd, char *ip, int port)
   return 0;
 }
 
-char *sendMessage(char *orig_message, int sockfd)
+char *sendMessage(char *orig_message, char *ip, int sockfd)
 {
 
   int n;
@@ -197,9 +197,10 @@ char *sendMessage(char *orig_message, int sockfd)
   bzero(message, 256);
   strcpy(message, orig_message);
   strcat(message, "#");
-  //FIXMEZ: digest contains some rubbish data at the end of string
+  strcat(message, ip);
+  strcat(message, "#");
+  //FIXME: digest contains some rubbish data at the end of string
   //strncat fixes the issue by copying only the usefull bytes to message
-  //don't know why that happens though 
   strncat(message, digest, 16);
   //print2hex(digest, strlen(digest));
   //DPRINT("\tmessage size=%d\n", strlen(digest));
@@ -209,6 +210,7 @@ char *sendMessage(char *orig_message, int sockfd)
   bzero(response, 256);
   //fflush(sockfd);
   n = recv(sockfd, response, 255, 0);
+  assert(n != 0); //TODO: if zero, connection has been closed, maybe should handle gracefully
   if (n < 0)
     error("ERROR reading from socket");
   printf("size=%d\n", n);
@@ -220,7 +222,7 @@ void ns_profiler_poll_workers(node_t * cur)
 {
   int i;
   int sockfd;
-  char *ip;
+  char *ip, *ip2;
   char *response, *message = strdup("REQSTATS");
   int port = 2113;
   DPRINT("\tNumber of addresses to poll %d\n", cur->naddrs);
@@ -233,9 +235,10 @@ void ns_profiler_poll_workers(node_t * cur)
     cur->addr_stats[i].net_load = (double) (cur->naddrs - i);
 #else
     //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
-    ip = inet_ntoa(cur->addr_stats[i].in_addr);
+    ip2 = inet_ntoa(cur->addr_stats[i].in_addr);
+    ip = strdup("139.91.70.90");
     //ip = strdup("192.168.1.69");
-    DPRINT("\tPolling ip %s\n", ip);
+    DPRINT("\tPolling ip %s\n", ip2);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
     //  DPRINT("\tSkipping localhost\n");
     //  continue;
@@ -248,7 +251,12 @@ void ns_profiler_poll_workers(node_t * cur)
       cur->addr_stats[i].net_load = 255.0f;
       continue;
     };
-    response = sendMessage(message, sockfd);
+    //append ip to message
+    //DPRINT("&message=%p\n", message);
+    //strcat(message, "#");
+    //strcat(message, ip2);
+    //DPRINT("done\n");
+    response = sendMessage(message, ip2, sockfd);
     if (parse_response(response, &(cur->addr_stats[i]))) {
       fprintf(stderr, "Checksum Error in worker's message\n");
       // handle this somehow? The worker is down put it last in the list ;)
@@ -420,41 +428,46 @@ static isc_threadresult_t ns_profiler_thread()
 
 
                     //TODOZ find a way to skip builtin rdatasets (this is for efficiency)
-#if 1
-                    // For each rdataset create a node in ht_g
-                    value = (node_t *) malloc(sizeof(node_t));
-                    DPRINT("Alloc value: %p\n", value);
-                    dns_rdataset_init(&value->rdataset);
-                    dns_rdataset_clone(&rdataset, &value->rdataset);
-                    value->next = list_g;
-                    value->naddrs = dns_rdataset_count(&rdataset);
-                    value->addr_stats = (ns_profiler_a_node_t *) malloc(value->naddrs * sizeof(ns_profiler_a_node_t));
-                    DPRINT("Alloc addr_stats: %p\n", value->addr_stats);
-                    memset(value->addr_stats, 0, (value->naddrs * sizeof(ns_profiler_a_node_t)));
-                    list_g = value;
-                    ++node_cnt;
-#endif
 
-                    // transform the rdataset
-                    dns_rdataslab_transformrdataset(&rdataset, value->addr_stats);
+										int count = dns_rdataset_count(&rdataset);
+										if (count > 1) {
 
-                    int i = 0;
-                    for (result = dns_rdataset_first(&rdataset);
-                         result == ISC_R_SUCCESS; result = dns_rdataset_next(&rdataset)) {
+		                  // For each rdataset create a node in ht_g
+		                  value = (node_t *) malloc(sizeof(node_t));
+		                  DPRINT("Alloc value: %p\n", value);
+		                  dns_rdataset_init(&value->rdataset);
+		                  dns_rdataset_clone(&rdataset, &value->rdataset);
+		                  value->next = list_g;
+		                  value->naddrs = count;
+		                  value->addr_stats = (ns_profiler_a_node_t *) malloc(value->naddrs * sizeof(ns_profiler_a_node_t));
+		                  DPRINT("Alloc addr_stats: %p\n", value->addr_stats);
+		                  memset(value->addr_stats, 0, (value->naddrs * sizeof(ns_profiler_a_node_t)));
+		                  list_g = value;
+		                  ++node_cnt;
 
-                      dns_rdata_init(&rdata);
-                      dns_rdataset_current(&rdataset, &rdata);
-#if 1
-                      if (rdata.type == dns_rdatatype_a) {
-                        result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
-                        RUNTIME_CHECK(result == ISC_R_SUCCESS);
+		                  // transform the rdataset
+		                  dns_rdataslab_transformrdataset(&rdataset, value->addr_stats);
 
-                        // push the rdatas in the node
-                        memcpy(&value->addr_stats[i++].in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
-                        //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
-                      }
-#endif
-                    }
+		                  int i = 0;
+		                  for (result = dns_rdataset_first(&rdataset);
+		                       result == ISC_R_SUCCESS; result = dns_rdataset_next(&rdataset)) {
+
+		                    dns_rdata_init(&rdata);
+		                    dns_rdataset_current(&rdataset, &rdata);
+
+		                    if (rdata.type == dns_rdatatype_a) {
+		                      result = dns_rdata_tostruct(&rdata, &rdata_a, NULL);
+		                      RUNTIME_CHECK(result == ISC_R_SUCCESS);
+
+		                      // push the rdatas in the node
+		                      memcpy(&value->addr_stats[i++].in_addr, &rdata_a.in_addr, sizeof(struct in_addr));
+		                      //                     value->addr_stats[value->naddrs++]->s_addr = rdata_a.in_addr.s_addr;
+		                    } else
+		                    	value->naddrs--;
+		                    
+		                  }
+		                  
+		                }
 
                   }
 
