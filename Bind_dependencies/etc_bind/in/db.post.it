@@ -1,0 +1,27 @@
+$TTL @UPDATE_INTERVAL@
+;
+; dns zone for for schroder.net
+;
+; any time you make a change to the domain, bump the
+; "serial" setting below. the format is easy:
+; YYYYMMDDI, with the I being an iterator in case you
+; make more than one change during any one day
+$ORIGIN post.it.
+@ IN SOA ns1.post.it. admin.post.it. (
+                        201205026 ; serial
+                        8h        ; refresh
+                        4h        ; retry
+                        4w        ; expire
+                        1d )      ; minimum
+	IN NS ns1.post.it.
+	IN NS ns2.post.it.
+
+;post.it IN A 192.168.16.254 
+ns1	IN A 192.168.10.10
+ns2	IN A 192.168.10.10
+www 	IN A 192.168.16.0
+ 	IN A 192.168.16.1
+ 	IN A 192.168.16.3
+mail 	IN A 192.168.16.10
+ 	IN A 192.168.16.11
+ 	IN A 192.168.16.12

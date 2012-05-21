@@ -1,0 +1,33 @@
+$TTL @UPDATE_INTERVAL@
+;
+; dns zone for for schroder.net
+;
+; any time you make a change to the domain, bump the
+; "serial" setting below. the format is easy:
+; YYYYMMDDI, with the I being an iterator in case you
+; make more than one change during any one day
+$ORIGIN google.org.
+@ IN SOA ns1.google.org. admin.google.org. (
+                        201205026 ; serial
+                        8h        ; refresh
+                        4h        ; retry
+                        4w        ; expire
+                        1d )      ; minimum
+	IN NS ns1.google.org.
+	IN NS ns2.google.org.
+
+;google.org IN A 192.168.15.254 
+ns1	IN A 192.168.10.10
+ns2	IN A 192.168.10.10
+www 	IN A 192.168.15.0
+ 	IN A 192.168.15.1
+ 	IN A 192.168.15.2
+ 	IN A 192.168.15.3
+ 	IN A 192.168.15.4
+ 	IN A 192.168.15.5
+ 	IN A 192.168.15.6
+ 	IN A 192.168.15.7
+mail 	IN A 192.168.15.10
+ 	IN A 192.168.15.11
+ 	IN A 192.168.15.12
+ 	IN A 192.168.15.13

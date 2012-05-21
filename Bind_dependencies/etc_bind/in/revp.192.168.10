@@ -1,0 +1,15 @@
+$ttl @UPDATE_INTERVAL@
+;
+; reverse pointers for 192.168.10.10 subnet
+;
+@     IN SOA  ns1.hahakios.net. admin.hahakios.net. (
+              201205025  ; serial
+              @UPDATE_INTERVAL@ ; refresh (8 hours)
+              1h      ; retry (4 hours)
+              1w      ; expire (4 weeks)
+              1h      ; minimum (1 day)
+              )
+; define the authoritative name server
+      IN       NS     ns1.hahakios.net.
+; our hosts, in numeric order
+;8     IN       PTR     hahakios.net

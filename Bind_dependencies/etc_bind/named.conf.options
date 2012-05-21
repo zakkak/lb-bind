@@ -1,0 +1,32 @@
+options {
+	directory "/etc/bind";
+
+	// If there is a firewall between you and nameservers you want
+	// to talk to, you may need to fix the firewall to allow multiple
+	// ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+	// If your ISP provided one or more IP addresses for stable 
+	// nameservers, you probably want to use them as forwarders.  
+	// Uncomment the following block, and insert the addresses replacing 
+	// the all-0's placeholder.
+
+	//forwarders {
+	// 	123.123.123.123;
+	//};
+
+	auth-nxdomain no;    # conform to RFC1035
+	//listen-on-v6 { any; };
+	rrset-order {order fixed;};
+};
+	logging{
+		channel simple_log{
+			file "/etc/bind/bind.log" versions 3 size 5m;
+			severity warning;
+			print-time yes;
+			print-severity yes;
+			print-category yes;
+		};
+		category default{
+			simple_log;
+		};
+	};

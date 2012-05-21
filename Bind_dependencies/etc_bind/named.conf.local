@@ -1,0 +1,40 @@
+//
+// Do any local configuration here
+//
+
+//db.cs559.gr  db.google.org  db.hahakios.net  db.post.it  db.vr.es  db.youtube.net
+
+vzone "cs559.gr" {
+	type master;
+	file "/etc/bind/db.cs559.gr";
+};
+ 
+vzone "google.org" {
+	type master;
+	file "/etc/bind/db.google.org";
+};
+ 
+vzone "hahakios.net" {
+	type master;
+	file "/etc/bind/db.hahakios.net";
+};
+ 
+vzone "post.it" {
+	type master;
+	file "/etc/bind/db.post.it";
+};
+ 
+vzone "vr.es" {
+	type master;
+	file "/etc/bind/db.vr.es";
+};
+ 
+vzone "youtube.net" {
+	type master;
+	file "/etc/bind/db.youtube.net";
+};
+
+zone "10.10.168.192.in-addr.arpa" {
+	type master;
+	file "/etc/bind/revp.192.168.10";
+};

@@ -1,0 +1,21 @@
+02-May-2012 22:08:54.899 general: error: zone localhost/IN: NS 'ns1.hahakios.net.localhost' has no address records (A or AAAA)
+02-May-2012 22:08:54.899 general: error: zone localhost/IN: not loaded due to errors.
+02-May-2012 22:08:54.901 general: error: zone hahakios.net/IN: has no NS records
+02-May-2012 22:08:54.901 general: error: zone hahakios.net/IN: not loaded due to errors.
+02-May-2012 22:23:40.409 general: error: zone localhost/IN: NS 'ns1.hahakios.net.localhost' has no address records (A or AAAA)
+02-May-2012 22:23:40.410 general: error: zone localhost/IN: not loaded due to errors.
+02-May-2012 22:23:40.410 general: error: zone hahakios.net/IN: has no NS records
+02-May-2012 22:23:40.410 general: error: zone hahakios.net/IN: not loaded due to errors.
+02-May-2012 22:24:14.395 general: error: zone localhost/IN: NS 'ns1.hahakios.net.localhost' has no address records (A or AAAA)
+02-May-2012 22:24:14.395 general: error: zone localhost/IN: not loaded due to errors.
+02-May-2012 22:24:14.401 general: error: zone hahakios.net/IN: has no NS records
+02-May-2012 22:24:14.401 general: error: zone hahakios.net/IN: not loaded due to errors.
+02-May-2012 23:41:48.982 general: error: zone localhost/IN: NS 'ns1.hahakios.net.localhost' has no address records (A or AAAA)
+02-May-2012 23:41:48.982 general: error: zone localhost/IN: not loaded due to errors.
+02-May-2012 23:41:48.984 general: error: zone hahakios.net/IN: NS 'ns1.hahakios.net' has no address records (A or AAAA)
+02-May-2012 23:41:48.984 general: error: zone hahakios.net/IN: NS 'ns2.hahakios.net' has no address records (A or AAAA)
+02-May-2012 23:41:48.984 general: error: zone hahakios.net/IN: not loaded due to errors.
+02-May-2012 23:50:11.316 general: error: zone localhost/IN: NS 'ns1.hahakios.net.localhost' has no address records (A or AAAA)
+02-May-2012 23:50:11.316 general: error: zone localhost/IN: not loaded due to errors.
+02-May-2012 23:55:25.533 general: error: zone localhost/IN: NS 'ns1.hahakios.net.localhost' has no address records (A or AAAA)
+02-May-2012 23:55:25.533 general: error: zone localhost/IN: not loaded due to errors.

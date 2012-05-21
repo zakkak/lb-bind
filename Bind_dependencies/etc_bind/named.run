@@ -1,0 +1,594 @@
+02-May-2012 22:08:54.886 reading built-in trusted keys from file '/etc/bind/bind.keys'
+02-May-2012 22:08:54.886 set maximum stack size to 4294967295: success
+02-May-2012 22:08:54.886 set maximum data size to 4294967295: success
+02-May-2012 22:08:54.886 set maximum core size to 4294967295: success
+02-May-2012 22:08:54.886 set maximum open files to 18446744073709551615: success
+02-May-2012 22:08:54.886 using default UDP/IPv4 port range: [1024, 65535]
+02-May-2012 22:08:54.887 using default UDP/IPv6 port range: [1024, 65535]
+02-May-2012 22:08:54.888 listening on IPv4 interface lo, 127.0.0.1#53
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: create
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: createclients
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: get client
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: create new
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: clientmctx
+02-May-2012 22:08:54.888 client @0xb54dc008: create
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: get client
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: create new
+02-May-2012 22:08:54.888 clientmgr @0x84ff460: clientmctx
+02-May-2012 22:08:54.888 client @0xb549b008: create
+02-May-2012 22:08:54.888 binding TCP socket: address in use
+02-May-2012 22:08:54.888 listening on IPv4 interface eth0, 192.168.10.10#53
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: create
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: createclients
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: get client
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: create new
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: clientmctx
+02-May-2012 22:08:54.889 client @0xb545a008: create
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: get client
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: create new
+02-May-2012 22:08:54.889 clientmgr @0x852f4d0: clientmctx
+02-May-2012 22:08:54.889 client @0xb5419008: create
+02-May-2012 22:08:54.889 binding TCP socket: address in use
+02-May-2012 22:08:54.889 listening on IPv4 interface eth1, 10.0.3.15#53
+02-May-2012 22:08:54.889 clientmgr @0x853e760: create
+02-May-2012 22:08:54.889 clientmgr @0x853e760: createclients
+02-May-2012 22:08:54.889 clientmgr @0x853e760: get client
+02-May-2012 22:08:54.889 clientmgr @0x853e760: create new
+02-May-2012 22:08:54.889 clientmgr @0x853e760: clientmctx
+02-May-2012 22:08:54.889 client @0xb53d8008: create
+02-May-2012 22:08:54.889 clientmgr @0x853e760: get client
+02-May-2012 22:08:54.889 clientmgr @0x853e760: create new
+02-May-2012 22:08:54.889 clientmgr @0x853e760: clientmctx
+02-May-2012 22:08:54.890 client @0xb5397008: create
+02-May-2012 22:08:54.890 binding TCP socket: address in use
+02-May-2012 22:08:54.890 generating session key for dynamic DNS
+02-May-2012 22:08:54.890 sizing zone task pool based on 6 zones
+02-May-2012 22:08:54.892 res 0xb7525968: create
+02-May-2012 22:08:54.892 dns_requestmgr_create
+02-May-2012 22:08:54.892 dns_requestmgr_create: 0xb7531108
+02-May-2012 22:08:54.892 dns_requestmgr_whenshutdown
+02-May-2012 22:08:54.893 set up managed keys zone for view _default, file 'managed-keys.bind'
+02-May-2012 22:08:54.893 automatic empty zone: 10.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 16.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 17.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 18.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 19.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 20.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 21.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 22.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 23.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 24.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 25.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 26.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 27.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 28.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 29.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 30.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 31.172.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 168.192.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 254.169.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 2.0.192.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 100.51.198.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 113.0.203.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 255.255.255.255.IN-ADDR.ARPA
+02-May-2012 22:08:54.893 automatic empty zone: 0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: D.F.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: 8.E.F.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: 9.E.F.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: A.E.F.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: B.E.F.IP6.ARPA
+02-May-2012 22:08:54.894 automatic empty zone: 8.B.D.0.1.0.0.2.IP6.ARPA
+02-May-2012 22:08:54.895 res 0xb7525d28: create
+02-May-2012 22:08:54.896 dns_requestmgr_create
+02-May-2012 22:08:54.896 dns_requestmgr_create: 0xb7531708
+02-May-2012 22:08:54.896 dns_requestmgr_whenshutdown
+02-May-2012 22:08:54.896 open: /etc/bind/rndc.key: file not found
+02-May-2012 22:08:54.896 couldn't add command channel 127.0.0.1#953: file not found
+02-May-2012 22:23:40.398 reading built-in trusted keys from file '/etc/bind/bind.keys'
+02-May-2012 22:23:40.398 set maximum stack size to 4294967295: success
+02-May-2012 22:23:40.398 set maximum data size to 4294967295: success
+02-May-2012 22:23:40.398 set maximum core size to 4294967295: success
+02-May-2012 22:23:40.398 set maximum open files to 18446744073709551615: success
+02-May-2012 22:23:40.398 using default UDP/IPv4 port range: [1024, 65535]
+02-May-2012 22:23:40.398 using default UDP/IPv6 port range: [1024, 65535]
+02-May-2012 22:23:40.400 listening on IPv4 interface lo, 127.0.0.1#53
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: create
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: createclients
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: get client
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: create new
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: clientmctx
+02-May-2012 22:23:40.400 client @0xb532e008: create
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: get client
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: create new
+02-May-2012 22:23:40.400 clientmgr @0x98bc460: clientmctx
+02-May-2012 22:23:40.400 client @0xb52ed008: create
+02-May-2012 22:23:40.400 binding TCP socket: address in use
+02-May-2012 22:23:40.400 listening on IPv4 interface eth0, 192.168.10.10#53
+02-May-2012 22:23:40.400 clientmgr @0x98ec4d0: create
+02-May-2012 22:23:40.400 clientmgr @0x98ec4d0: createclients
+02-May-2012 22:23:40.400 clientmgr @0x98ec4d0: get client
+02-May-2012 22:23:40.400 clientmgr @0x98ec4d0: create new
+02-May-2012 22:23:40.400 clientmgr @0x98ec4d0: clientmctx
+02-May-2012 22:23:40.401 client @0xb52ac008: create
+02-May-2012 22:23:40.401 clientmgr @0x98ec4d0: get client
+02-May-2012 22:23:40.401 clientmgr @0x98ec4d0: create new
+02-May-2012 22:23:40.401 clientmgr @0x98ec4d0: clientmctx
+02-May-2012 22:23:40.401 client @0xb526b008: create
+02-May-2012 22:23:40.401 binding TCP socket: address in use
+02-May-2012 22:23:40.401 listening on IPv4 interface eth1, 10.0.3.15#53
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: create
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: createclients
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: get client
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: create new
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: clientmctx
+02-May-2012 22:23:40.401 client @0xb522a008: create
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: get client
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: create new
+02-May-2012 22:23:40.401 clientmgr @0x98fb760: clientmctx
+02-May-2012 22:23:40.401 client @0xb51e9008: create
+02-May-2012 22:23:40.401 binding TCP socket: address in use
+02-May-2012 22:23:40.402 generating session key for dynamic DNS
+02-May-2012 22:23:40.402 sizing zone task pool based on 6 zones
+02-May-2012 22:23:40.402 res 0xb7377968: create
+02-May-2012 22:23:40.404 dns_requestmgr_create
+02-May-2012 22:23:40.404 dns_requestmgr_create: 0xb7383108
+02-May-2012 22:23:40.404 dns_requestmgr_whenshutdown
+02-May-2012 22:23:40.404 set up managed keys zone for view _default, file 'managed-keys.bind'
+02-May-2012 22:23:40.404 automatic empty zone: 10.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 16.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 17.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 18.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 19.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 20.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 21.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 22.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 23.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 24.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 25.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 26.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 27.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 28.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 29.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.404 automatic empty zone: 30.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 31.172.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 168.192.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 254.169.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 2.0.192.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 100.51.198.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 113.0.203.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 255.255.255.255.IN-ADDR.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: D.F.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 8.E.F.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 9.E.F.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: A.E.F.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: B.E.F.IP6.ARPA
+02-May-2012 22:23:40.405 automatic empty zone: 8.B.D.0.1.0.0.2.IP6.ARPA
+02-May-2012 22:23:40.406 res 0xb7377d28: create
+02-May-2012 22:23:40.407 dns_requestmgr_create
+02-May-2012 22:23:40.407 dns_requestmgr_create: 0xb7383708
+02-May-2012 22:23:40.407 dns_requestmgr_whenshutdown
+02-May-2012 22:24:14.383 reading built-in trusted keys from file '/etc/bind/bind.keys'
+02-May-2012 22:24:14.383 set maximum stack size to 4294967295: success
+02-May-2012 22:24:14.383 set maximum data size to 4294967295: success
+02-May-2012 22:24:14.383 set maximum core size to 4294967295: success
+02-May-2012 22:24:14.383 set maximum open files to 18446744073709551615: success
+02-May-2012 22:24:14.383 using default UDP/IPv4 port range: [1024, 65535]
+02-May-2012 22:24:14.384 using default UDP/IPv6 port range: [1024, 65535]
+02-May-2012 22:24:14.385 listening on IPv4 interface lo, 127.0.0.1#53
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: create
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: createclients
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: get client
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: create new
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: clientmctx
+02-May-2012 22:24:14.385 client @0xb536e008: create
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: get client
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: create new
+02-May-2012 22:24:14.385 clientmgr @0x8ae5460: clientmctx
+02-May-2012 22:24:14.386 client @0xb532d008: create
+02-May-2012 22:24:14.386 clientmgr @0x8ae5460: createclients
+02-May-2012 22:24:14.386 clientmgr @0x8ae5460: get client
+02-May-2012 22:24:14.386 clientmgr @0x8ae5460: create new
+02-May-2012 22:24:14.386 clientmgr @0x8ae5460: clientmctx
+02-May-2012 22:24:14.386 client @0xb52ec008: create
+02-May-2012 22:24:14.386 listening on IPv4 interface eth0, 192.168.10.10#53
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: create
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: createclients
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: get client
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: create new
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: clientmctx
+02-May-2012 22:24:14.386 client @0xb52ab008: create
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: get client
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: create new
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: clientmctx
+02-May-2012 22:24:14.386 client @0xb526a008: create
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: createclients
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: get client
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: create new
+02-May-2012 22:24:14.386 clientmgr @0x8b1caf0: clientmctx
+02-May-2012 22:24:14.387 client @0xb5229008: create
+02-May-2012 22:24:14.387 listening on IPv4 interface eth1, 10.0.3.15#53
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: create
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: createclients
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: get client
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: create new
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: clientmctx
+02-May-2012 22:24:14.387 client @0xb51e8008: create
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: get client
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: create new
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: clientmctx
+02-May-2012 22:24:14.387 client @0xb51a7008: create
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: createclients
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: get client
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: create new
+02-May-2012 22:24:14.387 clientmgr @0x8b24760: clientmctx
+02-May-2012 22:24:14.387 client @0xb5166008: create
+02-May-2012 22:24:14.388 generating session key for dynamic DNS
+02-May-2012 22:24:14.388 sizing zone task pool based on 6 zones
+02-May-2012 22:24:14.389 res 0xb73b7968: create
+02-May-2012 22:24:14.389 dns_requestmgr_create
+02-May-2012 22:24:14.389 dns_requestmgr_create: 0xb73c3108
+02-May-2012 22:24:14.390 dns_requestmgr_whenshutdown
+02-May-2012 22:24:14.390 set up managed keys zone for view _default, file 'managed-keys.bind'
+02-May-2012 22:24:14.390 automatic empty zone: 10.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 16.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 17.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 18.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 19.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 20.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 21.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 22.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 23.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 24.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 25.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 26.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 27.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 28.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 29.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 30.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 31.172.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 168.192.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 254.169.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 2.0.192.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 100.51.198.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 113.0.203.IN-ADDR.ARPA
+02-May-2012 22:24:14.390 automatic empty zone: 255.255.255.255.IN-ADDR.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: 0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: D.F.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: 8.E.F.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: 9.E.F.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: A.E.F.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: B.E.F.IP6.ARPA
+02-May-2012 22:24:14.391 automatic empty zone: 8.B.D.0.1.0.0.2.IP6.ARPA
+02-May-2012 22:24:14.391 res 0xb73b7d28: create
+02-May-2012 22:24:14.392 dns_requestmgr_create
+02-May-2012 22:24:14.392 dns_requestmgr_create: 0xb73c3708
+02-May-2012 22:24:14.392 dns_requestmgr_whenshutdown
+02-May-2012 23:41:48.953 starting BIND 9.9.0 -d 3 -c /etc/bind/named.conf
+02-May-2012 23:41:48.953 built with '--without-openssl' '--enable-fixed-rrset' '--disable-ipv6' '--sysconfdir=/etc/bind' '--enable-threads'
+02-May-2012 23:41:48.953 ----------------------------------------------------
+02-May-2012 23:41:48.953 BIND 9 is maintained by Internet Systems Consortium,
+02-May-2012 23:41:48.953 Inc. (ISC), a non-profit 501(c)(3) public-benefit 
+02-May-2012 23:41:48.953 corporation.  Support and training for BIND 9 are 
+02-May-2012 23:41:48.953 available at https://www.isc.org/support
+02-May-2012 23:41:48.953 ----------------------------------------------------
+02-May-2012 23:41:48.953 adjusted limit on open files from 4096 to 1048576
+02-May-2012 23:41:48.953 found 2 CPUs, using 2 worker threads
+02-May-2012 23:41:48.953 using 2 UDP listeners per interface
+02-May-2012 23:41:48.953 using up to 4096 sockets
+02-May-2012 23:41:48.954 Registering DLZ_dlopen driver
+02-May-2012 23:41:48.954 Registering SDLZ driver 'dlopen'
+02-May-2012 23:41:48.954 Registering DLZ driver 'dlopen'
+02-May-2012 23:41:48.955 decrement_reference: delete from rbt: 0xb74f10b0 .
+02-May-2012 23:41:48.957 loading configuration from '/etc/bind/named.conf'
+02-May-2012 23:41:48.957 reading built-in trusted keys from file '/etc/bind/bind.keys'
+02-May-2012 23:41:48.957 set maximum stack size to 4294967295: success
+02-May-2012 23:41:48.957 set maximum data size to 4294967295: success
+02-May-2012 23:41:48.957 set maximum core size to 4294967295: success
+02-May-2012 23:41:48.957 set maximum open files to 18446744073709551615: success
+02-May-2012 23:41:48.957 using default UDP/IPv4 port range: [1024, 65535]
+02-May-2012 23:41:48.958 using default UDP/IPv6 port range: [1024, 65535]
+02-May-2012 23:41:48.959 listening on IPv4 interface lo, 127.0.0.1#53
+02-May-2012 23:41:48.959 clientmgr @0x8fe25c8: create
+02-May-2012 23:41:48.959 clientmgr @0x8fe25c8: createclients
+02-May-2012 23:41:48.959 clientmgr @0x8fe25c8: get client
+02-May-2012 23:41:48.959 clientmgr @0x8fe25c8: create new
+02-May-2012 23:41:48.959 clientmgr @0x8fe25c8: clientmctx
+02-May-2012 23:41:48.959 client @0xb54a2008: create
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: get client
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: create new
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: clientmctx
+02-May-2012 23:41:48.960 client @0xb5461008: create
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: createclients
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: get client
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: create new
+02-May-2012 23:41:48.960 clientmgr @0x8fe25c8: clientmctx
+02-May-2012 23:41:48.960 client @0xb5420008: create
+02-May-2012 23:41:48.960 listening on IPv4 interface eth0, 192.168.10.10#53
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: create
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: createclients
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: get client
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: create new
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: clientmctx
+02-May-2012 23:41:48.960 client @0xb53df008: create
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: get client
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: create new
+02-May-2012 23:41:48.960 clientmgr @0x9019c58: clientmctx
+02-May-2012 23:41:48.961 client @0xb539e008: create
+02-May-2012 23:41:48.961 clientmgr @0x9019c58: createclients
+02-May-2012 23:41:48.961 clientmgr @0x9019c58: get client
+02-May-2012 23:41:48.961 clientmgr @0x9019c58: create new
+02-May-2012 23:41:48.961 clientmgr @0x9019c58: clientmctx
+02-May-2012 23:41:48.961 client @0xb535d008: create
+02-May-2012 23:41:48.961 listening on IPv4 interface eth1, 10.0.3.15#53
+02-May-2012 23:41:48.961 clientmgr @0x90218c8: create
+02-May-2012 23:41:48.961 clientmgr @0x90218c8: createclients
+02-May-2012 23:41:48.961 clientmgr @0x90218c8: get client
+02-May-2012 23:41:48.961 clientmgr @0x90218c8: create new
+02-May-2012 23:41:48.961 clientmgr @0x90218c8: clientmctx
+02-May-2012 23:41:48.962 client @0xb531c008: create
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: get client
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: create new
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: clientmctx
+02-May-2012 23:41:48.962 client @0xb52db008: create
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: createclients
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: get client
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: create new
+02-May-2012 23:41:48.962 clientmgr @0x90218c8: clientmctx
+02-May-2012 23:41:48.962 client @0xb529a008: create
+02-May-2012 23:41:48.963 generating session key for dynamic DNS
+02-May-2012 23:41:48.963 sizing zone task pool based on 6 zones
+02-May-2012 23:41:48.964 res 0xb74eb968: create
+02-May-2012 23:41:48.965 dns_requestmgr_create
+02-May-2012 23:41:48.965 dns_requestmgr_create: 0xb74f7108
+02-May-2012 23:41:48.965 dns_requestmgr_whenshutdown
+02-May-2012 23:41:48.965 set up managed keys zone for view _default, file 'managed-keys.bind'
+02-May-2012 23:41:48.965 automatic empty zone: 10.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 16.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 17.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 18.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 19.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 20.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 21.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 22.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 23.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 24.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 25.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 26.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 27.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.965 automatic empty zone: 28.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 29.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 30.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 31.172.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 168.192.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 254.169.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 2.0.192.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 100.51.198.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 113.0.203.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 255.255.255.255.IN-ADDR.ARPA
+02-May-2012 23:41:48.966 automatic empty zone: 0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: D.F.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: 8.E.F.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: 9.E.F.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: A.E.F.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: B.E.F.IP6.ARPA
+02-May-2012 23:41:48.967 automatic empty zone: 8.B.D.0.1.0.0.2.IP6.ARPA
+02-May-2012 23:41:48.968 res 0xb74ebd28: create
+02-May-2012 23:41:48.969 dns_requestmgr_create
+02-May-2012 23:41:48.969 dns_requestmgr_create: 0xb74f7708
+02-May-2012 23:41:48.969 dns_requestmgr_whenshutdown
+02-May-2012 23:50:11.273 starting BIND 9.9.0 -d 3 -c /etc/bind/named.conf
+02-May-2012 23:50:11.274 built with '--without-openssl' '--enable-fixed-rrset' '--disable-ipv6' '--sysconfdir=/etc/bind' '--enable-threads'
+02-May-2012 23:50:11.274 ----------------------------------------------------
+02-May-2012 23:50:11.274 BIND 9 is maintained by Internet Systems Consortium,
+02-May-2012 23:50:11.274 Inc. (ISC), a non-profit 501(c)(3) public-benefit 
+02-May-2012 23:50:11.274 corporation.  Support and training for BIND 9 are 
+02-May-2012 23:50:11.274 available at https://www.isc.org/support
+02-May-2012 23:50:11.274 ----------------------------------------------------
+02-May-2012 23:50:11.274 adjusted limit on open files from 4096 to 1048576
+02-May-2012 23:50:11.275 found 2 CPUs, using 2 worker threads
+02-May-2012 23:50:11.275 using 2 UDP listeners per interface
+02-May-2012 23:50:11.276 using up to 4096 sockets
+02-May-2012 23:50:11.276 Registering DLZ_dlopen driver
+02-May-2012 23:50:11.276 Registering SDLZ driver 'dlopen'
+02-May-2012 23:50:11.276 Registering DLZ driver 'dlopen'
+02-May-2012 23:50:11.279 decrement_reference: delete from rbt: 0xb73ac0b0 .
+02-May-2012 23:50:11.288 loading configuration from '/etc/bind/named.conf'
+02-May-2012 23:50:11.290 reading built-in trusted keys from file '/etc/bind/bind.keys'
+02-May-2012 23:50:11.291 set maximum stack size to 4294967295: success
+02-May-2012 23:50:11.291 set maximum data size to 4294967295: success
+02-May-2012 23:50:11.291 set maximum core size to 4294967295: success
+02-May-2012 23:50:11.291 set maximum open files to 18446744073709551615: success
+02-May-2012 23:50:11.292 using default UDP/IPv4 port range: [1024, 65535]
+02-May-2012 23:50:11.293 using default UDP/IPv6 port range: [1024, 65535]
+02-May-2012 23:50:11.297 listening on IPv4 interface lo, 127.0.0.1#53
+02-May-2012 23:50:11.297 clientmgr @0x83155c8: create
+02-May-2012 23:50:11.298 clientmgr @0x83155c8: createclients
+02-May-2012 23:50:11.298 clientmgr @0x83155c8: get client
+02-May-2012 23:50:11.298 clientmgr @0x83155c8: create new
+02-May-2012 23:50:11.298 clientmgr @0x83155c8: clientmctx
+02-May-2012 23:50:11.299 client @0xb535d008: create
+02-May-2012 23:50:11.299 clientmgr @0x83155c8: get client
+02-May-2012 23:50:11.299 clientmgr @0x83155c8: create new
+02-May-2012 23:50:11.299 clientmgr @0x83155c8: clientmctx
+02-May-2012 23:50:11.299 client @0xb531c008: create
+02-May-2012 23:50:11.300 clientmgr @0x83155c8: createclients
+02-May-2012 23:50:11.300 clientmgr @0x83155c8: get client
+02-May-2012 23:50:11.300 clientmgr @0x83155c8: create new
+02-May-2012 23:50:11.300 clientmgr @0x83155c8: clientmctx
+02-May-2012 23:50:11.300 client @0xb52db008: create
+02-May-2012 23:50:11.300 listening on IPv4 interface eth0, 192.168.10.10#53
+02-May-2012 23:50:11.300 clientmgr @0x834cc58: create
+02-May-2012 23:50:11.301 clientmgr @0x834cc58: createclients
+02-May-2012 23:50:11.301 clientmgr @0x834cc58: get client
+02-May-2012 23:50:11.301 clientmgr @0x834cc58: create new
+02-May-2012 23:50:11.301 clientmgr @0x834cc58: clientmctx
+02-May-2012 23:50:11.302 client @0xb529a008: create
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: get client
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: create new
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: clientmctx
+02-May-2012 23:50:11.302 client @0xb5259008: create
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: createclients
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: get client
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: create new
+02-May-2012 23:50:11.302 clientmgr @0x834cc58: clientmctx
+02-May-2012 23:50:11.302 client @0xb5218008: create
+02-May-2012 23:50:11.302 listening on IPv4 interface eth1, 10.0.3.15#53
+02-May-2012 23:50:11.302 clientmgr @0x83548c8: create
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: createclients
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: get client
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: create new
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: clientmctx
+02-May-2012 23:50:11.303 client @0xb51d7008: create
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: get client
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: create new
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: clientmctx
+02-May-2012 23:50:11.303 client @0xb5196008: create
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: createclients
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: get client
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: create new
+02-May-2012 23:50:11.303 clientmgr @0x83548c8: clientmctx
+02-May-2012 23:50:11.303 client @0xb5155008: create
+02-May-2012 23:50:11.304 generating session key for dynamic DNS
+02-May-2012 23:50:11.304 sizing zone task pool based on 6 zones
+02-May-2012 23:50:11.305 res 0xb73a6968: create
+02-May-2012 23:50:11.305 dns_requestmgr_create
+02-May-2012 23:50:11.305 dns_requestmgr_create: 0xb73b2108
+02-May-2012 23:50:11.305 dns_requestmgr_whenshutdown
+02-May-2012 23:50:11.305 set up managed keys zone for view _default, file 'managed-keys.bind'
+02-May-2012 23:50:11.305 automatic empty zone: 10.IN-ADDR.ARPA
+02-May-2012 23:50:11.305 automatic empty zone: 16.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.305 automatic empty zone: 17.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.305 automatic empty zone: 18.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.305 automatic empty zone: 19.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.305 automatic empty zone: 20.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 21.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 22.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 23.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 24.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 25.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 26.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 27.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 28.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 29.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 30.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 31.172.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 168.192.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 254.169.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 2.0.192.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 100.51.198.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 113.0.203.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 255.255.255.255.IN-ADDR.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 23:50:11.306 automatic empty zone: 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 23:50:11.307 automatic empty zone: D.F.IP6.ARPA
+02-May-2012 23:50:11.307 automatic empty zone: 8.E.F.IP6.ARPA
+02-May-2012 23:50:11.307 automatic empty zone: 9.E.F.IP6.ARPA
+02-May-2012 23:50:11.307 automatic empty zone: A.E.F.IP6.ARPA
+02-May-2012 23:50:11.307 automatic empty zone: B.E.F.IP6.ARPA
+02-May-2012 23:50:11.307 automatic empty zone: 8.B.D.0.1.0.0.2.IP6.ARPA
+02-May-2012 23:50:11.307 res 0xb73a6d28: create
+02-May-2012 23:50:11.308 dns_requestmgr_create
+02-May-2012 23:50:11.308 dns_requestmgr_create: 0xb73b2708
+02-May-2012 23:50:11.308 dns_requestmgr_whenshutdown
+02-May-2012 23:55:25.512 reading built-in trusted keys from file '/etc/bind/bind.keys'
+02-May-2012 23:55:25.512 set maximum stack size to 4294967295: success
+02-May-2012 23:55:25.512 set maximum data size to 4294967295: success
+02-May-2012 23:55:25.512 set maximum core size to 4294967295: success
+02-May-2012 23:55:25.512 set maximum open files to 18446744073709551615: success
+02-May-2012 23:55:25.513 using default UDP/IPv4 port range: [1024, 65535]
+02-May-2012 23:55:25.514 using default UDP/IPv6 port range: [1024, 65535]
+02-May-2012 23:55:25.518 listening on IPv4 interface lo, 127.0.0.1#53
+02-May-2012 23:55:25.518 clientmgr @0x8e64460: create
+02-May-2012 23:55:25.519 clientmgr @0x8e64460: createclients
+02-May-2012 23:55:25.519 clientmgr @0x8e64460: get client
+02-May-2012 23:55:25.519 clientmgr @0x8e64460: create new
+02-May-2012 23:55:25.519 clientmgr @0x8e64460: clientmctx
+02-May-2012 23:55:25.519 client @0xb5381008: create
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: get client
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: create new
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: clientmctx
+02-May-2012 23:55:25.520 client @0xb5340008: create
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: createclients
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: get client
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: create new
+02-May-2012 23:55:25.520 clientmgr @0x8e64460: clientmctx
+02-May-2012 23:55:25.521 client @0xb52ff008: create
+02-May-2012 23:55:25.521 listening on IPv4 interface eth0, 192.168.10.10#53
+02-May-2012 23:55:25.521 clientmgr @0x8e9baf0: create
+02-May-2012 23:55:25.521 clientmgr @0x8e9baf0: createclients
+02-May-2012 23:55:25.521 clientmgr @0x8e9baf0: get client
+02-May-2012 23:55:25.521 clientmgr @0x8e9baf0: create new
+02-May-2012 23:55:25.521 clientmgr @0x8e9baf0: clientmctx
+02-May-2012 23:55:25.522 client @0xb52be008: create
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: get client
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: create new
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: clientmctx
+02-May-2012 23:55:25.522 client @0xb527d008: create
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: createclients
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: get client
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: create new
+02-May-2012 23:55:25.522 clientmgr @0x8e9baf0: clientmctx
+02-May-2012 23:55:25.522 client @0xb523c008: create
+02-May-2012 23:55:25.522 listening on IPv4 interface eth1, 10.0.3.15#53
+02-May-2012 23:55:25.522 clientmgr @0x8ea3760: create
+02-May-2012 23:55:25.522 clientmgr @0x8ea3760: createclients
+02-May-2012 23:55:25.522 clientmgr @0x8ea3760: get client
+02-May-2012 23:55:25.522 clientmgr @0x8ea3760: create new
+02-May-2012 23:55:25.522 clientmgr @0x8ea3760: clientmctx
+02-May-2012 23:55:25.523 client @0xb51fb008: create
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: get client
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: create new
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: clientmctx
+02-May-2012 23:55:25.523 client @0xb51ba008: create
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: createclients
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: get client
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: create new
+02-May-2012 23:55:25.523 clientmgr @0x8ea3760: clientmctx
+02-May-2012 23:55:25.523 client @0xb5179008: create
+02-May-2012 23:55:25.523 generating session key for dynamic DNS
+02-May-2012 23:55:25.524 sizing zone task pool based on 6 zones
+02-May-2012 23:55:25.524 res 0xb73ca968: create
+02-May-2012 23:55:25.525 dns_requestmgr_create
+02-May-2012 23:55:25.525 dns_requestmgr_create: 0xb73d6108
+02-May-2012 23:55:25.525 dns_requestmgr_whenshutdown
+02-May-2012 23:55:25.525 set up managed keys zone for view _default, file 'managed-keys.bind'
+02-May-2012 23:55:25.525 automatic empty zone: 10.IN-ADDR.ARPA
+02-May-2012 23:55:25.525 automatic empty zone: 16.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.525 automatic empty zone: 17.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.525 automatic empty zone: 18.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 19.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 20.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 21.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 22.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 23.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 24.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 25.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 26.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 27.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 28.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 29.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 30.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 31.172.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 168.192.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 254.169.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 2.0.192.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 100.51.198.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 113.0.203.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 255.255.255.255.IN-ADDR.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: D.F.IP6.ARPA
+02-May-2012 23:55:25.526 automatic empty zone: 8.E.F.IP6.ARPA
+02-May-2012 23:55:25.527 automatic empty zone: 9.E.F.IP6.ARPA
+02-May-2012 23:55:25.527 automatic empty zone: A.E.F.IP6.ARPA
+02-May-2012 23:55:25.527 automatic empty zone: B.E.F.IP6.ARPA
+02-May-2012 23:55:25.527 automatic empty zone: 8.B.D.0.1.0.0.2.IP6.ARPA
+02-May-2012 23:55:25.527 res 0xb73cad28: create
+02-May-2012 23:55:25.528 dns_requestmgr_create
+02-May-2012 23:55:25.528 dns_requestmgr_create: 0xb73d6708
+02-May-2012 23:55:25.528 dns_requestmgr_whenshutdown
