@@ -12,6 +12,7 @@ How to download, configure, compile, install and run lb-bind
 
   * libssl-dev
   * sysstat
+  * ruby-daemons
 
 ==Download==
 {{{
