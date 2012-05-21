@@ -1,4 +1,6 @@
+#summary : How to deploy lb-bind
 #labels Phase-Deploy
+
 = Introduction =
 
 How to download, configure, compile, install and run lb-bind
