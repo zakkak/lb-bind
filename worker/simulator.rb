@@ -3,8 +3,29 @@ require 'socket'
 require 'digest/md5'
 require 'daemons'
 
+$workers = Hash.new
+
 def range (min, max)
     rand * (max-min) + min
+end
+
+def simulate_system_tick
+	$workers.each { | ip, val |
+		if($workers[ip].loads_num > 0)
+			$workers[ip].loads.each_index { | i |
+				$workers[ip].loads[i].liveness_period = $workers[ip].loads[i].liveness_period-1
+					if($workers[ip].loads[i].liveness_period == 0)
+						#remove the finished job
+						puts "log: Removing job #{i} from #{ip}"
+						$workers[ip].cpu_usage = $workers[ip].cpu_usage - $workers[ip].loads[i].cpu_usage
+						$workers[ip].io_usage = $workers[ip].io_usage - $workers[ip].loads[i].io_usage
+						$workers[ip].total_traffic = $workers[ip].total_traffic - $workers[ip].loads[i].total_traffic
+						$workers[ip].loads.delete_at(i)
+						$workers[ip].loads_num = $workers[ip].loads_num-1		
+					end
+			}
+		end
+	}
 end
 
 def proc_workload_message (message)
@@ -13,9 +34,36 @@ def proc_workload_message (message)
 	ip = data.shift
 	cpu_usage = data.shift
 	io_usage = data.shift
-	cpu_idle = data.shift
 	total_traffic = data.shift
 	liveness_period = data.shift
+	load_num = 0
+	puts "log: Adding new load to #{ip}"
+	if(!$workers.has_key?(ip))
+		new_load = Struct.new(:cpu_usage, :io_usage, :total_traffic, :liveness_period)
+		#loads = Array()
+		loads = Array[new_load.new(cpu_usage.to_f, io_usage.to_f, total_traffic.to_f, liveness_period.to_i)]
+		workloads = Struct.new(:loads_num, :loads, :cpu_usage, :io_usage, :total_traffic)
+		$workers[ip] = workloads.new(1, loads, cpu_usage.to_f, io_usage.to_f, total_traffic.to_f)
+		#load_num = $workers[ip].loads_num
+	else
+		new_load = Struct.new(:cpu_usage, :io_usage, :total_traffic, :liveness_period)
+		$workers[ip].loads_num = $workers[ip].loads_num+1 #can't get it working with ++
+		load_num = $workers[ip].loads_num-1
+		$workers[ip].loads[load_num] = new_load.new(cpu_usage.to_f, io_usage.to_f, total_traffic.to_f, liveness_period.to_i)
+		#add new loads to total loads
+		$workers[ip].cpu_usage = $workers[ip].cpu_usage + $workers[ip].loads[load_num].cpu_usage
+		$workers[ip].io_usage = $workers[ip].io_usage + $workers[ip].loads[load_num].io_usage
+		$workers[ip].total_traffic = $workers[ip].total_traffic + $workers[ip].loads[load_num].total_traffic
+		#$workers[ip] = workloads.new(0, loads.new(cpu_usage, io_usage, total_traffic, liveness_period), cpu_usage, io_usage, total_traffic)
+	end
+	#puts load_num
+	puts "log: cpu_usage:#{$workers[ip].cpu_usage}"
+	puts "log: io_usage:#{$workers[ip].io_usage}"
+	puts "log: total_traffic:#{$workers[ip].total_traffic}"
+	#puts cpu_usage
+	#puts io_usage
+	#puts total_traffic
+	#puts liveness_period
 end
 
 puts "Starting up worker simulator..."
@@ -27,25 +75,23 @@ while (session = server.accept)
 	  puts "log: got input from client"
 
 	  req = session.recv(256)
-		profiler_message = (req.chomp).split("#")
+		profiler_message = req.split("#")
 		request = profiler_message.shift
 		data = profiler_message.shift
 		req_digest = profiler_message.shift
 		req_end = profiler_message.shift
-		#puts ip 
-		#puts request
 		#puts req_digest.unpack('H*')	
 	 	check_digest = Digest::MD5.digest(request)
 		#puts check_digest.unpack('H*')
 		if(request.eql?("WORKLOAD"))
-			
-
-		end		
+			proc_workload_message(data)
+			next
 		#close session if digests do not match
 		elsif(!(request.eql?("REQSTATS")) or req_digest != check_digest) 
 			session.close
 			next
 		end 
+		ip = data
 		#session.puts "Server: Welcome #{session.peeraddr[2]}\n"
 		#get statistics
 		#cpu_stats = `sar 1 1 | grep "Average"`
@@ -55,14 +101,10 @@ while (session = server.accept)
 		#cpu_usage = cpu_stats.split[2].to_f + cpu_stats.split[3].to_f + cpu_stats.split[4].to_f
 		#io_usage = cpu_stats.split[5]
 		#cpu_idle = cpu_stats.split[7]
-		min = 0;
-		max = 100;
-		#puts "checkpoint 1"
-		cpu_usage = range(min, max) 
-		io_usage = range(min, max)
-		cpu_idle = range(min, max)
-		total_traffic = range(min, max)
-		#puts "checkpoint 2"
+
+		cpu_usage = $workers[ip].cpu_usage 
+		io_usage = $workers[ip].io_usage
+		total_traffic = $workers[ip].total_traffic
 		#puts "Parsing network statistics"
 		#total_traffic = 0
 		#net_stats.each do |line|
@@ -79,5 +121,6 @@ while (session = server.accept)
 		#puts "log: sending goodbye"
 		#session.puts "Server: Goodbye"	
 	end
+	simulate_system_tick()
 end
 
