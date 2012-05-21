@@ -1,0 +1,18 @@
+#How to deploy and run benchmark script
+
+= Introduction =
+How to download and execute benchmark.rb script
+
+
+= Requires =
+  * dnsruby ruby package
+
+= Download =
+svn checkout http://lb-bind.googlecode.com/svn/trunk/bind-9.9.0 lb-bind 
+
+= Setup = 
+You may need to change the names array to contain names in your domain
+and the set the ip that corresponds to the machine that runs simulator.rb
+
+= Run scripts =
+ruby benchmark.rb
