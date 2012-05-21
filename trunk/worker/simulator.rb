@@ -83,6 +83,7 @@ while (session = server.accept)
 		#puts req_digest.unpack('H*')	
 	 	check_digest = Digest::MD5.digest(request)
 		#puts check_digest.unpack('H*')
+		puts data
 		if(request.eql?("WORKLOAD"))
 			proc_workload_message(data)
 			next
@@ -101,10 +102,15 @@ while (session = server.accept)
 		#cpu_usage = cpu_stats.split[2].to_f + cpu_stats.split[3].to_f + cpu_stats.split[4].to_f
 		#io_usage = cpu_stats.split[5]
 		#cpu_idle = cpu_stats.split[7]
-
-		cpu_usage = $workers[ip].cpu_usage 
-		io_usage = $workers[ip].io_usage
-		total_traffic = $workers[ip].total_traffic
+		if(!$workers.has_key?(ip))
+			cpu_usage = 0 
+			io_usage = 0
+			total_traffic = 0
+		else
+			cpu_usage = $workers[ip].cpu_usage 
+			io_usage = $workers[ip].io_usage
+			total_traffic = $workers[ip].total_traffic
+		end
 		#puts "Parsing network statistics"
 		#total_traffic = 0
 		#net_stats.each do |line|
@@ -119,8 +125,8 @@ while (session = server.accept)
 		#puts checksum.unpack('H*')
   	session.puts message
 		#puts "log: sending goodbye"
-		#session.puts "Server: Goodbye"	
+		#session.puts "Server: Goodbye"
+		simulate_system_tick()	
 	end
-	simulate_system_tick()
 end
 
