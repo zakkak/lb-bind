@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#How to deploy and run worker and/or simulator scripts
 
 = Introduction =
 How to download and execute worker.rb or simulator.rb scripts
