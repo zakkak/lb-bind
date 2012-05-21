@@ -1,0 +1,29 @@
+$TTL @UPDATE_INTERVAL@
+;
+; dns zone for for schroder.net
+;
+; any time you make a change to the domain, bump the
+; "serial" setting below. the format is easy:
+; YYYYMMDDI, with the I being an iterator in case you
+; make more than one change during any one day
+$ORIGIN hahakios.net.
+@ IN SOA ns1.hahakios.net. admin.hahakios.net. (
+                        201205026 ; serial
+                        8h        ; refresh
+                        4h        ; retry
+                        4w        ; expire
+                        1d )      ; minimum
+	IN NS ns1.hahakios.net.
+	IN NS ns2.hahakios.net.
+
+;hahakios.net IN A 192.168.13.254 
+ns1	IN A 192.168.10.10
+ns2	IN A 192.168.10.10
+www 	IN A 192.168.13.0
+ 	IN A 192.168.13.1
+ 	IN A 192.168.13.2
+ 	IN A 192.168.13.3
+mail 	IN A 192.168.13.10
+ 	IN A 192.168.13.11
+ 	IN A 192.168.13.12
+ 	IN A 192.168.13.13

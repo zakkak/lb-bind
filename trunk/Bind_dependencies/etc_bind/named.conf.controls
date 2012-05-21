@@ -1,0 +1,9 @@
+controls {   
+	inet 127.0.0.1 allow { localhost; } 
+	keys { cs559; }; 
+};
+
+key "cs559" {   
+	algorithm hmac-md5;   
+	secret "cs559key"; 
+};
