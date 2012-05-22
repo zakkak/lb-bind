@@ -1,4 +1,4 @@
-#How to deploy and run benchmark script
+#summary How to deploy and run benchmark script
 
 = Introduction =
 How to download and execute benchmark.rb script
