@@ -102,12 +102,12 @@ loop do
 			#io_usage = cpu_stats.split[5]
 			#cpu_idle = cpu_stats.split[7]
 			if(!$workers.has_key?(ip))
-				cpu_usage = 0 
-				io_usage = 0
-				total_traffic = 0
-				#cpu_usage = range(0, 100) 
-				#io_usage = range(0, 100)
-				#total_traffic = range(0, 100)
+				#cpu_usage = 0 
+				#io_usage = 0
+				#total_traffic = 0
+				cpu_usage = range(0, 100) 
+				io_usage = range(0, 100)
+				total_traffic = range(0, 100)
 			else
 				cpu_usage = $workers[ip].cpu_usage 
 				io_usage = $workers[ip].io_usage
@@ -121,12 +121,19 @@ loop do
 
 			#timestamp = Time.now.utc.iso8601
 			#message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
-			message = "#{io_usage}$#{cpu_usage}$#{total_traffic}"		
+			#message = "#{io_usage}$#{cpu_usage}$#{total_traffic}"		
+			message = [io_usage, cpu_usage, total_traffic].pack('g*')
+			#message << [cpu_usage].pack('g')
+			#message << [total_traffic].pack('g')
+			puts message.unpack('g*')
 			checksum = Digest::MD5.digest(message)
-			message << "##{checksum}"
+			#message << "##{checksum}"
+			puts checksum.unpack('H*') 
+			message << checksum
+			session.write message[0,40] 
 			#puts message
 			#puts checksum.unpack('H*')
-  			session.puts message
+  			#session.puts message
 			#puts "log: sending goodbye"
 			#session.puts "Server: Goodbye"
 			simulate_system_tick()	
