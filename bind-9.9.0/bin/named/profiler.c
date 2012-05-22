@@ -138,7 +138,7 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   double stats[3];
   char *message = strtok(response, "#");
   char *msg_digest = strtok(NULL, "#");
-	DPRINT("DIGEST*=%p\n" msg_digest);
+	DPRINT("DIGEST*=%p\n", msg_digest);
   int i;
   //printf("?=%s", msg_digest);
   //print2hex(msg_digest, 16);
