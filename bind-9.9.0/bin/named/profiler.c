@@ -156,8 +156,8 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   //DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
   //DPRINT("timestamp=%s\n", timestamp);
   memcpy( &currnode->io_load, response, 4);
-  memcpy( &currnode->cpu_load, response, 4);
-  memcpy( &currnode->net_load, response, 4);
+  memcpy( &currnode->cpu_load, response+4, 4);
+  memcpy( &currnode->net_load, response+8, 4);
   char *msg_digest = strdup(&response[12]);
   response[12]='\0';
   char *digest = md5_digest(response);
