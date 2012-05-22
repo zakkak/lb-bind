@@ -134,30 +134,40 @@ char *md5_digest(const char *input)
 
 int parse_response(char *response, ns_profiler_a_node_t * currnode)
 {
-  char *timestamp;
-  double stats[3];
-  char *message = strtok(response, "#");
-  char *msg_digest = strtok(NULL, "#");
-	DPRINT("DIGEST*=%p\n", msg_digest);
+  //char *timestamp;
+  //double stats[3];
+  //char *message = strtok(response, "#");
+  //char *msg_digest = strtok(NULL, "#");
+  //  DPRINT("DIGEST*=%p\n", msg_digest);
   int i;
   //printf("?=%s", msg_digest);
   //print2hex(msg_digest, 16);
-  char *digest = md5_digest(message);
+  //char *digest = md5_digest(message);
   //print2hex(digest, 16);
+  //for (i = 0; i < 16; i++) {
+  //  if (msg_digest[i] != digest[i])
+  //    return -1;
+  //}
+  //stats[0] = atof(strtok(message, "$"));
+  //for (i = 1; i < 3; i++) {
+  //  stats[i] = atof(strtok(NULL, "$"));
+  //}
+  //timestamp = strtok(NULL, "$");
+  //DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
+  //DPRINT("timestamp=%s\n", timestamp);
+  memcpy( &currnode->io_load, response, 4);
+  memcpy( &currnode->cpu_load, response, 4);
+  memcpy( &currnode->net_load, response, 4);
+  char *msg_digest = strdup(&response[12]);
+  response[12]='\0';
+  char *digest = md5_digest(response);
   for (i = 0; i < 16; i++) {
     if (msg_digest[i] != digest[i])
       return -1;
   }
-  stats[0] = atof(strtok(message, "$"));
-  for (i = 1; i < 3; i++) {
-    stats[i] = atof(strtok(NULL, "$"));
-  }
-  //timestamp = strtok(NULL, "$");
-  //DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
-  //DPRINT("timestamp=%s\n", timestamp);
-  currnode->io_load = stats[0];
-  currnode->cpu_load = stats[1];
-  currnode->net_load = stats[2];
+  //currnode->io_load = stats[1];
+  //currnode->cpu_load = stats[1];
+  //currnode->net_load = stats[2];
   //DPRINT("\nMessage stats\n");
   //DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
   //DPRINT("\t\tio load=%lf\n", currnode->io_load);
@@ -192,7 +202,7 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
 {
 
   int n;
-  char *response = (char *) malloc(256 * sizeof(char));
+  char *response = (char *) malloc(42 * sizeof(char));
   char *digest = md5_digest(orig_message);
   char message[256];
   bzero(message, 256);
@@ -208,12 +218,10 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
   n = write(sockfd, message, strlen(message));
   if (n < 0)
     error("ERROR writing to socket");
-  bzero(response, 256);
+  //bzero(response, 42);
   //fflush(sockfd);
   n = recv(sockfd, response, 28, 0);
   response[28]='\0';
-	  print2hex(response, 28);
-  fprintf(stderr, "resp=%s", response);
   if (n <= 0)
     return NULL;
 //TODO: if zero, connection has been closed, maybe should handle gracefully
@@ -277,8 +285,8 @@ void ns_profiler_poll_workers(node_t * cur)
     close(sockfd);
 #endif
   }
-//   free(message);
-//   free(response);
+  //free(message);
+  //free(response);
   return;
 }
 
@@ -287,7 +295,7 @@ void ns_profiler_poll_workers(node_t * cur)
 static int cmp(const void *v_a, const void *v_b)
 {
   const ns_profiler_a_node_t *a, *b;
-  double s_a, s_b;
+  float s_a, s_b;
 
   a = (const ns_profiler_a_node_t *) v_a;
   b = (const ns_profiler_a_node_t *) v_b;
