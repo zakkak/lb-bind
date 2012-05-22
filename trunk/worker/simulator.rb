@@ -3,6 +3,20 @@ require 'socket'
 require 'digest/md5'
 require 'daemons'
 
+#def every_n_seconds(n)
+#  loop do
+#    before = Time.now
+#    yield
+#    interval = n-(Time.now-before)
+#    sleep(interval) if interval > 0
+#  end
+#end
+
+#every_n_seconds(5) do
+# puts "#{Time.now.strftime("%X")}... beep!"
+#end
+
+
 $workers = Hash.new
 
 def range (min, max)
@@ -10,13 +24,26 @@ def range (min, max)
 end
 
 def simulate_system_tick
+	#puts "****** TICK ******"
 	$workers.each { | ip, val |
 		if($workers[ip].loads_num > 0)
 			$workers[ip].loads.each_index { | i |
 				$workers[ip].loads[i].liveness_period = $workers[ip].loads[i].liveness_period-1
 					if($workers[ip].loads[i].liveness_period == 0)
 						#remove the finished job
-						puts "log: Removing job #{i} from #{ip}"
+						#puts "log: Removing job #{i} from #{ip}"
+						if($workers[ip].cpu_usage < $workers[ip].loads[i].cpu_usage)
+							put "************ WE DRUNK HIM! ***************"
+							$workers[ip].cpu_usage = 0
+						end
+						if($workers[ip].io_usage < $workers[ip].loads[i].io_usage)
+							put "************ WE DRUNK HIM! ***************"
+							$workers[ip].cpu_usage = 0
+						end
+						if($workers[ip].total_traffic < $workers[ip].loads[i].total_traffic)
+							put "************ WE DRUNK HIM! ***************"
+							$workers[ip].cpu_usage = 0
+						end
 						$workers[ip].cpu_usage = $workers[ip].cpu_usage - $workers[ip].loads[i].cpu_usage
 						$workers[ip].io_usage = $workers[ip].io_usage - $workers[ip].loads[i].io_usage
 						$workers[ip].total_traffic = $workers[ip].total_traffic - $workers[ip].loads[i].total_traffic
@@ -26,6 +53,7 @@ def simulate_system_tick
 			}
 		end
 	}
+	#puts "****** TACK ******"
 end
 
 def proc_workload_message (message)
@@ -37,7 +65,7 @@ def proc_workload_message (message)
 	total_traffic = data.shift
 	liveness_period = data.shift
 	load_num = 0
-	puts "log: Adding new load to #{ip}"
+	#puts "log: Adding new load to #{ip}"
 	if(!$workers.has_key?(ip))
 		new_load = Struct.new(:cpu_usage, :io_usage, :total_traffic, :liveness_period)
 		#loads = Array()
@@ -57,23 +85,40 @@ def proc_workload_message (message)
 		#$workers[ip] = workloads.new(0, loads.new(cpu_usage, io_usage, total_traffic, liveness_period), cpu_usage, io_usage, total_traffic)
 	end
 	#puts load_num
-	puts "log: cpu_usage:#{$workers[ip].cpu_usage}"
-	puts "log: io_usage:#{$workers[ip].io_usage}"
-	puts "log: total_traffic:#{$workers[ip].total_traffic}"
+	#puts "log: cpu_usage:#{$workers[ip].cpu_usage}"
+	#puts "log: io_usage:#{$workers[ip].io_usage}"
+	#puts "log: total_traffic:#{$workers[ip].total_traffic}"
 	#puts cpu_usage
 	#puts io_usage
 	#puts total_traffic
 	#puts liveness_period
 end
 
-puts "Starting up worker simulator..."
+#this thread dumps worker loads to a file
+Thread.start do
+	File.open("loads_#{Time.now.strftime("%X")}.txt", 'a') do | f |
+		loop do
+			sleep(60)			
+			f.puts "Probe at #{Time.now.strftime("%X")}"
+			$workers.each { | ip, val | 
+				f.puts "Worker #{ip}"
+				f.puts "\tcpu load=#{val.cpu_usage}"
+				f.puts "\tio load=#{val.io_usage}"
+				f.puts "\tnet load =#{val.total_traffic}"
+			}
+			f.puts ""
+		end
+	end
+end
+
+#puts "Starting up worker simulator..."
 server = TCPServer.new(2113)
 
 #while (session = server.accept)
 loop do
 	Thread.start server.accept do | session |
-	  puts "log: Connection from #{session.peeraddr[2]} at #{session.peeraddr[3]}"
-	  puts "log: got input from client"
+	  #puts "log: Connection from #{session.peeraddr[2]} at #{session.peeraddr[3]}"
+	  #puts "log: got input from client"
 
 	  req = session.recv(256)
 		profiler_message = req.split("#")
@@ -102,12 +147,12 @@ loop do
 			#io_usage = cpu_stats.split[5]
 			#cpu_idle = cpu_stats.split[7]
 			if(!$workers.has_key?(ip))
-				#cpu_usage = 0 
-				#io_usage = 0
-				#total_traffic = 0
-				cpu_usage = range(0, 100) 
-				io_usage = range(0, 100)
-				total_traffic = range(0, 100)
+				cpu_usage = 0 
+				io_usage = 0
+				total_traffic = 0
+				#cpu_usage = range(0, 100) 
+				#io_usage = range(0, 100)
+				#total_traffic = range(0, 100)
 			else
 				cpu_usage = $workers[ip].cpu_usage 
 				io_usage = $workers[ip].io_usage
