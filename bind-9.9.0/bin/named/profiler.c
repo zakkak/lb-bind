@@ -138,6 +138,7 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   double stats[3];
   char *message = strtok(response, "#");
   char *msg_digest = strtok(NULL, "#");
+	DPRINT("DIGEST*=%p\n" msg_digest);
   int i;
   //printf("?=%s", msg_digest);
   //print2hex(msg_digest, 16);
@@ -151,7 +152,7 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   for (i = 1; i < 3; i++) {
     stats[i] = atof(strtok(NULL, "$"));
   }
-  timestamp = strtok(NULL, "$");
+  //timestamp = strtok(NULL, "$");
   //DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
   //DPRINT("timestamp=%s\n", timestamp);
   currnode->io_load = stats[0];
