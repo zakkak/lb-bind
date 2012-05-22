@@ -69,8 +69,9 @@ end
 puts "Starting up worker simulator..."
 server = TCPServer.new(2113)
 
-while (session = server.accept)
-	Thread.start do
+#while (session = server.accept)
+loop do
+	Thread.start server.accept do | session |
 	  puts "log: Connection from #{session.peeraddr[2]} at #{session.peeraddr[3]}"
 	  puts "log: got input from client"
 
@@ -83,50 +84,49 @@ while (session = server.accept)
 		#puts req_digest.unpack('H*')	
 	 	check_digest = Digest::MD5.digest(request)
 		#puts check_digest.unpack('H*')
-		puts data
+		#puts data
 		if(request.eql?("WORKLOAD"))
 			proc_workload_message(data)
-			next
 		#close session if digests do not match
 		elsif(!(request.eql?("REQSTATS")) or req_digest != check_digest) 
 			session.close
-			next
-		end 
-		ip = data
-		#session.puts "Server: Welcome #{session.peeraddr[2]}\n"
-		#get statistics
-		#cpu_stats = `sar 1 1 | grep "Average"`
-		#net_stats = `sar -n DEV 1 1 | grep "Average"`
+		else 
+			ip = data
+			#session.puts "Server: Welcome #{session.peeraddr[2]}\n"
+			#get statistics
+			#cpu_stats = `sar 1 1 | grep "Average"`
+			#net_stats = `sar -n DEV 1 1 | grep "Average"`
 
-		#puts "Parsing cpu statistics"
-		#cpu_usage = cpu_stats.split[2].to_f + cpu_stats.split[3].to_f + cpu_stats.split[4].to_f
-		#io_usage = cpu_stats.split[5]
-		#cpu_idle = cpu_stats.split[7]
-		if(!$workers.has_key?(ip))
-			cpu_usage = 0 
-			io_usage = 0
-			total_traffic = 0
-		else
-			cpu_usage = $workers[ip].cpu_usage 
-			io_usage = $workers[ip].io_usage
-			total_traffic = $workers[ip].total_traffic
+			#puts "Parsing cpu statistics"
+			#cpu_usage = cpu_stats.split[2].to_f + cpu_stats.split[3].to_f + cpu_stats.split[4].to_f
+			#io_usage = cpu_stats.split[5]
+			#cpu_idle = cpu_stats.split[7]
+			if(!$workers.has_key?(ip))
+				cpu_usage = 0 
+				io_usage = 0
+				total_traffic = 0
+			else
+				cpu_usage = $workers[ip].cpu_usage 
+				io_usage = $workers[ip].io_usage
+				total_traffic = $workers[ip].total_traffic
+			end
+			#puts "Parsing network statistics"
+			#total_traffic = 0
+			#net_stats.each do |line|
+			#	total_traffic += line.split[4].to_f + line.split[5].to_f
+			#end	
+
+			timestamp = Time.now.utc.iso8601
+			message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
+			checksum = Digest::MD5.digest(message)
+			message << "##{checksum}"
+			#puts message
+			#puts checksum.unpack('H*')
+  			session.puts message
+			#puts "log: sending goodbye"
+			#session.puts "Server: Goodbye"
+			simulate_system_tick()	
 		end
-		#puts "Parsing network statistics"
-		#total_traffic = 0
-		#net_stats.each do |line|
-		#	total_traffic += line.split[4].to_f + line.split[5].to_f
-		#end
-
-		timestamp = Time.now.utc.iso8601
-		message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
-		checksum = Digest::MD5.digest(message)
-		message << "##{checksum}"
-		#puts message
-		#puts checksum.unpack('H*')
-  	session.puts message
-		#puts "log: sending goodbye"
-		#session.puts "Server: Goodbye"
-		simulate_system_tick()	
 	end
 end
 
