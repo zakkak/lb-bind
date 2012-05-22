@@ -199,7 +199,7 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
   strcat(message, "#");
   strcat(message, ip);
   strcat(message, "#");
-  //FIXME: digest contains some rubbish data at the end of string
+  //digest contains some rubbish data at the end of string
   //strncat fixes the issue by copying only the usefull bytes to message
   strncat(message, digest, 16);
   //print2hex(digest, strlen(digest));
@@ -210,9 +210,11 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
   bzero(response, 256);
   //fflush(sockfd);
   n = recv(sockfd, response, 255, 0);
-  assert(n != 0); //TODO: if zero, connection has been closed, maybe should handle gracefully
-  if (n < 0)
-    error("ERROR reading from socket");
+  if (n <= 0)
+    return NULL;
+//TODO: if zero, connection has been closed, maybe should handle gracefully
+//  if (n < 0)
+//    error("ERROR reading from socket");
   return response;
 }
 
@@ -236,9 +238,8 @@ void ns_profiler_poll_workers(node_t * cur)
     //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
     ip2 = inet_ntoa(cur->addr_stats[i].in_addr);
     //ip = strdup("139.91.70.90");
-    ip = strdup("192.168.1.73");
-	//ip = strdup("192.168.1.69");
-    DPRINT("Polling ip %s\n", ip2);
+    ip = strdup("192.168.10.11");
+    DPRINT("\tPolling ip %s\n", ip2);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
     //  DPRINT("\tSkipping localhost\n");
     //  continue;
@@ -257,15 +258,14 @@ void ns_profiler_poll_workers(node_t * cur)
     //strcat(message, ip2);
     //DPRINT("done\n");
     response = sendMessage(message, ip2, sockfd);
-    if (parse_response(response, &(cur->addr_stats[i]))) {
-      fprintf(stderr, "Checksum Error in worker's message\n");
+    if ( !response || parse_response(response, &(cur->addr_stats[i]))) {
+      fprintf(stderr, "Checksum (or socket closed) Error in worker's message\n");
       // handle this somehow? The worker is down put it last in the list ;)
       cur->addr_stats[i].cpu_load = 255.0f;
       cur->addr_stats[i].io_load = 255.0f;
       cur->addr_stats[i].net_load = 255.0f;
     }
     //printf("%s\n",message);
-    //FIXMEZ "WHO"
     DPRINT("\t%s's Stats\n", ip2);
     DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);
     DPRINT("\t\tio load=%lf\n", cur->addr_stats[i].io_load);
