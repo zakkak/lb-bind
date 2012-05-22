@@ -157,10 +157,10 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   currnode->io_load = stats[0];
   currnode->cpu_load = stats[1];
   currnode->net_load = stats[2];
-  DPRINT("Verify stats\n");
-  DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
-  DPRINT("\t\tio load=%lf\n", currnode->io_load);
-  DPRINT("\t\tnet load=%lf\n", currnode->net_load);
+  //DPRINT("\nMessage stats\n");
+  //DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
+  //DPRINT("\t\tio load=%lf\n", currnode->io_load);
+  //DPRINT("\t\tnet load=%lf\n", currnode->net_load);
   return 0;
 }
 
@@ -213,7 +213,6 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
   assert(n != 0); //TODO: if zero, connection has been closed, maybe should handle gracefully
   if (n < 0)
     error("ERROR reading from socket");
-  printf("size=%d\n", n);
   return response;
 }
 
@@ -236,9 +235,10 @@ void ns_profiler_poll_workers(node_t * cur)
 #else
     //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
     ip2 = inet_ntoa(cur->addr_stats[i].in_addr);
-    ip = strdup("139.91.70.90");
-    //ip = strdup("192.168.1.69");
-    DPRINT("\tPolling ip %s\n", ip2);
+    //ip = strdup("139.91.70.90");
+    ip = strdup("192.168.1.73");
+	//ip = strdup("192.168.1.69");
+    DPRINT("Polling ip %s\n", ip2);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
     //  DPRINT("\tSkipping localhost\n");
     //  continue;
@@ -266,7 +266,7 @@ void ns_profiler_poll_workers(node_t * cur)
     }
     //printf("%s\n",message);
     //FIXMEZ "WHO"
-    DPRINT("\t%s's Stats\n", "WHO");
+    DPRINT("\t%s's Stats\n", ip2);
     DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);
     DPRINT("\t\tio load=%lf\n", cur->addr_stats[i].io_load);
     DPRINT("\t\tnet load=%lf\n", cur->addr_stats[i].net_load);
