@@ -104,7 +104,7 @@ void print2hex(unsigned const char *string, int size)
   printf("\n");
 }
 
-char *md5_digest(const char *input)
+char *md5_digest(const char *input, size_t size)
 {
   EVP_MD_CTX mdctx;
   const EVP_MD *md;
@@ -123,7 +123,7 @@ char *md5_digest(const char *input)
 
   EVP_MD_CTX_init(&mdctx);
   EVP_DigestInit_ex(&mdctx, md, NULL);
-  EVP_DigestUpdate(&mdctx, input, strlen(input));
+  EVP_DigestUpdate(&mdctx, input, size);
   /* to add more data to hash, place additional calls to EVP_DigestUpdate here */
   EVP_DigestFinal_ex(&mdctx, output, &output_len);
   EVP_MD_CTX_cleanup(&mdctx);
@@ -158,13 +158,19 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   memcpy( &currnode->io_load, response, 4);
   memcpy( &currnode->cpu_load, response+4, 4);
   memcpy( &currnode->net_load, response+8, 4);
-  char *msg_digest = strdup(&response[12]);
+  //char *msg_digest = strdup(&response[12]);
+	char msg_digest[16];
+	memcpy(msg_digest, response+12, 16);
   response[12]='\0';
-  char *digest = md5_digest(response);
-  for (i = 0; i < 16; i++) {
-    if (msg_digest[i] != digest[i])
-      return -1;
-  }
+	//print2hex(msg_digest, 16);
+	char *digest = md5_digest(response, 12);
+	//print2hex(digest, 16);  
+	for (i = 0; i < 16; i++) {
+    if (msg_digest[i] != digest[i]) {
+			DPRINT("Hash check failed\n");      
+			return -1;
+		}
+  }    
   //currnode->io_load = stats[1];
   //currnode->cpu_load = stats[1];
   //currnode->net_load = stats[2];
@@ -203,7 +209,7 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
 
   int n;
   char *response = (char *) malloc(42 * sizeof(char));
-  char *digest = md5_digest(orig_message);
+  char *digest = md5_digest(orig_message, strlen(orig_message));
   char message[256];
   bzero(message, 256);
   strcpy(message, orig_message);
@@ -222,8 +228,10 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
   //fflush(sockfd);
   n = recv(sockfd, response, 28, 0);
   response[28]='\0';
-  if (n <= 0)
-    return NULL;
+  if (n <= 0) {
+		DPRINT("Recv failed with code:%d\n", n);    
+		return NULL;
+	}
 //TODO: if zero, connection has been closed, maybe should handle gracefully
 //  if (n < 0)
 //    error("ERROR reading from socket");
@@ -250,7 +258,7 @@ void ns_profiler_poll_workers(node_t * cur)
     //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
     ip2 = inet_ntoa(cur->addr_stats[i].in_addr);
     //ip = strdup("139.91.70.90");
-    ip = strdup("192.168.10.11");
+    ip = strdup("192.168.1.73");
     DPRINT("\tPolling ip %s\n", ip2);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
     //  DPRINT("\tSkipping localhost\n");
@@ -277,6 +285,8 @@ void ns_profiler_poll_workers(node_t * cur)
       cur->addr_stats[i].io_load = 255.0f;
       cur->addr_stats[i].net_load = 255.0f;
     }
+		if(response != NULL)
+			free(response);
     //printf("%s\n",message);
     DPRINT("\t%s's Stats\n", ip2);
     DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);
@@ -285,8 +295,7 @@ void ns_profiler_poll_workers(node_t * cur)
     close(sockfd);
 #endif
   }
-  //free(message);
-  //free(response);
+  free(message);
   return;
 }
 
