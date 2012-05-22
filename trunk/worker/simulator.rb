@@ -122,10 +122,10 @@ loop do
 			#timestamp = Time.now.utc.iso8601
 			#message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
 			#message = "#{io_usage}$#{cpu_usage}$#{total_traffic}"		
-			message = [io_usage, cpu_usage, total_traffic].pack('g*')
+			message = [io_usage, cpu_usage, total_traffic].pack('e*')
 			#message << [cpu_usage].pack('g')
 			#message << [total_traffic].pack('g')
-			puts message.unpack('g*')
+			puts message.unpack('e*')
 			checksum = Digest::MD5.digest(message)
 			#message << "##{checksum}"
 			puts checksum.unpack('H*') 
