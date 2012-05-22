@@ -56,7 +56,7 @@
 #define MYPRINT(...) fprintf(stderr, __VA_ARGS__)
 #define EPRINT(...) do{ fprintf(stderr, "\033[1;31m"); MYPRINT(__VA_ARGS__); fprintf(stderr, "\033[m"); exit(1); }while(0)
 
-#if 1
+#if 0
 #define DPRINT MYPRINT
 #else
 #define DPRINT(...)
@@ -258,14 +258,14 @@ void ns_profiler_poll_workers(node_t * cur)
     //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
     ip2 = inet_ntoa(cur->addr_stats[i].in_addr);
     //ip = strdup("139.91.70.90");
-    ip = strdup("192.168.1.73");
+    ip = strdup("192.168.10.11");
     DPRINT("\tPolling ip %s\n", ip2);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
     //  DPRINT("\tSkipping localhost\n");
     //  continue;
     //}
     if (connectToServer(sockfd, ip, port)) {
-      fprintf(stderr, "Could not connect to worker %s\n", ip);
+      DPRINT(stderr, "Could not connect to worker %s\n", ip);
       close(sockfd);
       cur->addr_stats[i].cpu_load = 255.0f;
       cur->addr_stats[i].io_load = 255.0f;
@@ -279,7 +279,12 @@ void ns_profiler_poll_workers(node_t * cur)
     //DPRINT("done\n");
     response = sendMessage(message, ip2, sockfd);
     if ( !response || parse_response(response, &(cur->addr_stats[i]))) {
-      fprintf(stderr, "Checksum (or socket closed) Error in worker's message\n");
+      if (response)
+		//fprintf(stderr, "Checksum Error in worker's message\n");
+		DPRINT("Checksum Error in worker's message\n");
+	  else
+	    //fprintf(stderr, "Socket Closed\n");
+	    DPRINT("Socket Closed\n");
       // handle this somehow? The worker is down put it last in the list ;)
       cur->addr_stats[i].cpu_load = 255.0f;
       cur->addr_stats[i].io_load = 255.0f;
@@ -319,8 +324,14 @@ static void ns_profiler_update_addrs()
 {
   node_t *current;
 
+  const char* ttl = getenv("TTL");
+  if (!ttl)
+	  EPRINT("You must set TTL ( bash$ TTL=0 named )");
+  
+  int up_interval = atoi(ttl);
+
   while (1) {
-    sleep(UPDATE_INTERVAL);
+    sleep(up_interval);
     DPRINT("Here we go again!!!\n");
     current = list_g;
 
