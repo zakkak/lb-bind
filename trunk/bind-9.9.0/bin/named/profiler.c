@@ -210,7 +210,10 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
     error("ERROR writing to socket");
   bzero(response, 256);
   //fflush(sockfd);
-  n = recv(sockfd, response, 255, 0);
+  n = recv(sockfd, response, 28, 0);
+  response[28]='\0';
+	  print2hex(response, 28);
+  fprintf(stderr, "resp=%s", response);
   if (n <= 0)
     return NULL;
 //TODO: if zero, connection has been closed, maybe should handle gracefully
