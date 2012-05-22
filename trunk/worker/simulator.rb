@@ -125,10 +125,10 @@ loop do
 			message = [io_usage, cpu_usage, total_traffic].pack('e*')
 			#message << [cpu_usage].pack('g')
 			#message << [total_traffic].pack('g')
-			puts message.unpack('e*')
+			#puts message.unpack('e*')
 			checksum = Digest::MD5.digest(message)
 			#message << "##{checksum}"
-			puts checksum.unpack('H*') 
+			#puts checksum.unpack('H*') 
 			message << checksum
 			session.write message[0,40] 
 			#puts message
