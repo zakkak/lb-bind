@@ -105,6 +105,9 @@ loop do
 				cpu_usage = 0 
 				io_usage = 0
 				total_traffic = 0
+				#cpu_usage = range(0, 100) 
+				#io_usage = range(0, 100)
+				#total_traffic = range(0, 100)
 			else
 				cpu_usage = $workers[ip].cpu_usage 
 				io_usage = $workers[ip].io_usage
@@ -116,8 +119,9 @@ loop do
 			#	total_traffic += line.split[4].to_f + line.split[5].to_f
 			#end	
 
-			timestamp = Time.now.utc.iso8601
-			message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
+			#timestamp = Time.now.utc.iso8601
+			#message = "#{io_usage}$#{cpu_usage}$#{total_traffic}$#{timestamp}"		
+			message = "#{io_usage}$#{cpu_usage}$#{total_traffic}"		
 			checksum = Digest::MD5.digest(message)
 			message << "##{checksum}"
 			#puts message
