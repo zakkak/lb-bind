@@ -36,13 +36,10 @@ sudo make install
 
 ==Setup==
 
-In `trunk/Bind_dependencies.rar` you will find `etc_bind` (copy it to `/etc/bind`)
-{{{
-sed -i 's/192\.168\.10\.10/your\.IP\.Addr\.ess/g' * in/*
-}}}
+In `trunk/Bind_dependencies` you will find `etc_bind` (copy it to `/etc/bind`)
 Finally inside /etc/bind run 
 {{{
-./set_ttl.sh <TTL>
+./set_ip.sh <your IP>
 }}}
 
 
