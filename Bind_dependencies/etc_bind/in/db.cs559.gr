@@ -17,8 +17,8 @@ $ORIGIN cs559.gr.
 	IN NS ns2.cs559.gr.
 
 ;cs559.gr IN A 192.168.14.254 
-ns1	IN A 192.168.10.10
-ns2	IN A 192.168.10.10
+ns1	IN A @MY_IP@
+ns2	IN A @MY_IP@
 team1	IN A 192.168.14.0
 	 	IN A 192.168.14.1
 	 	IN A 192.168.14.2
