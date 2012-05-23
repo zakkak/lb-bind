@@ -88,15 +88,37 @@ typedef struct node {
 
 node_t *list_g;
 
+pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
+
+inline void mywait(int timeInSec)
+{
+  struct timespec timeToWait;
+  struct timeval now;
+  int rt;
+
+  if(timeInSec<1)
+    return;
+
+  gettimeofday(&now,NULL);
+
+  timeToWait.tv_sec = now.tv_sec + timeInSec;
+  timeToWait.tv_nsec = now.tv_usec*1000;
+
+  pthread_mutex_lock(&fakeMutex);
+  rt = pthread_cond_timedwait(&fakeCond, &fakeMutex, &timeToWait);
+  pthread_mutex_unlock(&fakeMutex);
+}
+
 /*** WORKER COMMUNICATION FUNCTIONS ***/
 
-void error(const char *msg)
+static inline void error(const char *msg)
 {
   perror(msg);
   exit(0);
 }
 
-void print2hex(unsigned const char *string, int size)
+static inline void print2hex(unsigned const char *string, int size)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -104,7 +126,7 @@ void print2hex(unsigned const char *string, int size)
   printf("\n");
 }
 
-char *md5_digest(const char *input, size_t size)
+static inline char *md5_digest(const char *input, size_t size)
 {
   EVP_MD_CTX mdctx;
   const EVP_MD *md;
@@ -132,7 +154,7 @@ char *md5_digest(const char *input, size_t size)
   return (char *) output;
 }
 
-int parse_response(char *response, ns_profiler_a_node_t * currnode)
+static inline int parse_response(char *response, ns_profiler_a_node_t * currnode)
 {
   //char *timestamp;
   //double stats[3];
@@ -181,7 +203,7 @@ int parse_response(char *response, ns_profiler_a_node_t * currnode)
   return 0;
 }
 
-int connectToServer(int sockfd, char *ip, int port)
+static inline int connectToServer(int sockfd, char *ip, int port)
 {
   struct sockaddr_in serv_addr;
   struct hostent *server;
@@ -204,7 +226,7 @@ int connectToServer(int sockfd, char *ip, int port)
   return 0;
 }
 
-char *sendMessage(char *orig_message, char *ip, int sockfd)
+static inline char *sendMessage(char *orig_message, char *ip, int sockfd)
 {
 
   int n;
@@ -239,7 +261,7 @@ char *sendMessage(char *orig_message, char *ip, int sockfd)
 }
 
 
-void ns_profiler_poll_workers(node_t * cur)
+static inline void ns_profiler_poll_workers(node_t * cur)
 {
   int i;
   int sockfd;
@@ -258,7 +280,7 @@ void ns_profiler_poll_workers(node_t * cur)
     //FIXMEZ: inet_ntoa works fine, I cannot however configure bind correctly to get more names-ips
     ip2 = inet_ntoa(cur->addr_stats[i].in_addr);
     //ip = strdup("139.91.70.90");
-    ip = strdup("192.168.10.11");
+    ip = strdup("192.168.1.201");
     DPRINT("\tPolling ip %s\n", ip2);
     //if(strcmp(ip, "0,0,0,0,") == 0) {
     //  DPRINT("\tSkipping localhost\n");
@@ -331,7 +353,7 @@ static void ns_profiler_update_addrs()
   int up_interval = atoi(ttl);
 
   while (1) {
-    sleep(up_interval);
+    mywait(up_interval);
     DPRINT("Here we go again!!!\n");
     current = list_g;
 
