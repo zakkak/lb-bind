@@ -1,6 +1,6 @@
 $ttl @UPDATE_INTERVAL@
 ;
-; reverse pointers for 192.168.10.10 subnet
+; reverse pointers for @MY_IP@ subnet
 ;
 @     IN SOA  ns1.hahakios.net. admin.hahakios.net. (
               201205025  ; serial

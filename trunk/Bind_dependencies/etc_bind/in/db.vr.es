@@ -17,8 +17,8 @@ $ORIGIN vr.es.
 	IN NS ns2.vr.es.
 
 ;vr.es IN A 192.168.17.254 
-ns1	IN A 192.168.10.10
-ns2	IN A 192.168.10.10
+ns1	IN A @MY_IP@
+ns2	IN A @MY_IP@
 www 	IN A 192.168.17.0
  	IN A 192.168.17.1
  	IN A 192.168.17.2
