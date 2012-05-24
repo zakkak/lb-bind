@@ -1,7 +1,12 @@
-COMPILE / INSTALL:
-configure
-make
-make install
+==Dependencies==
+ * lbbind-dev
 
-RUN:
+==COMPILE / INSTALL==
+{{{
+./configure; make; sudo make install
+}}}
+
+==RUN==
+{{{
 dnsperf -d testfile -n <times_to_repeat_testfile> -s <server_ip> -c <number_of_clients_to_acts_as>
+}}}
