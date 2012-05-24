@@ -96,6 +96,11 @@ def proc_workload_message (message)
 			$workers[ip].cpu_usage = $workers[ip].cpu_usage + $workers[ip].loads[load_num].cpu_usage
 			$workers[ip].io_usage = $workers[ip].io_usage + $workers[ip].loads[load_num].io_usage
 			$workers[ip].total_traffic = $workers[ip].total_traffic + $workers[ip].loads[load_num].total_traffic
+			if($workers[ip].cpu_usage > 255.00 or $workers[ip].io_usage > 255.00 or $workers[ip].total_traffic > 255.00) 
+				$workers[ip].cpu_usage = 0.to_f;
+				$workers[ip].cpu_usage = 0.to_f;
+				$workers[ip].cpu_usage = 0.to_f;
+			end
 			#$workers[ip] = workloads.new(0, loads.new(cpu_usage, io_usage, total_traffic, liveness_period), cpu_usage, io_usage, total_traffic)
 		}
 	end
@@ -119,7 +124,12 @@ Thread.start do
 		#puts "++++++++++++++++ LOOPING ++++++++++++++++++++"
 		$workers.each { | ip, val |
 		#puts "++++++++++++++++#{ip}++++++++++++++++++++"
-			val.lock.synchronize {		
+			val.lock.synchronize {	
+				if(val.cpu_usage <= 0 or val.io_usage <= 0 or val.total_traffic <= 0) 
+					val.cpu_usage = 0;
+					val.io_usage = 0;
+					val.total_traffic = 0;
+				end	
 				if(!File.exists?("load_#{ip}.csv"))
 					File.open("load_#{ip}.csv", 'w') do | f |			
 						f << " " 
@@ -181,13 +191,11 @@ Thread.start do
 end
 
 #puts "Starting up worker simulator..."
-server = TCPServer.new(2113)
-
-#while (session = server.accept)
-loop do
-	Thread.start server.accept do | session |
+Thread.start do
+	bench_server = TCPServer.new(2114)
+	while (session = bench_server.accept)
 	  #puts "log: Connection from #{session.peeraddr[2]} at #{session.peeraddr[3]}"
-	  #puts "log: got input from client"
+	 	#puts "log: got input from client"
 
 	  req = session.recv(256)
 		profiler_message = req.split("#")
@@ -200,9 +208,33 @@ loop do
 		#puts check_digest.unpack('H*')
 		#puts data
 		if(request.eql?("WORKLOAD"))
+			#puts "log: message ok"
 			proc_workload_message(data)
+		else		
+			#put "log: message check failed"
+			session.close
+		end
+	end
+end
+
+server = TCPServer.new(2113)
+loop do
+	Thread.start server.accept do | session |
+	  #puts "log: Connection from #{session.peeraddr[2]} at #{session.peeraddr[3]}"
+	  #puts "log: got input from client1"
+
+	  req = session.recv(256)
+		profiler_message = req.split("#")
+		request = profiler_message.shift
+		data = profiler_message.shift
+		req_digest = profiler_message.shift
+		req_end = profiler_message.shift
+		#puts req_digest.unpack('H*')	
+	 	check_digest = Digest::MD5.digest(request)
+		#puts check_digest.unpack('H*')
+		#puts data
 		#close session if digests do not match
-		elsif(!(request.eql?("REQSTATS")) or req_digest != check_digest) 
+		if(!(request.eql?("REQSTATS")) or req_digest != check_digest) 
 			session.close
 		else 
 			ip = data
