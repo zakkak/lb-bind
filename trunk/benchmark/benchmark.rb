@@ -9,11 +9,11 @@ def range (min, max)
     rand * (max-min) + min
 end
 
-min = 0
-max = 10
+min = 1
+max = 100
 
 #lookup address
-names = Array["www.hahakios.net"] 
+names = Array["www.youtube.net"] 
 
 res = Dnsruby::Resolver.new
 res.do_caching = false 
@@ -34,22 +34,17 @@ while true do
 	#puts "*** ***"
 	#puts ret.answer.first
 	ip = ret.answer.first.rdata_to_string
-	#ret.answer.each { |entry|puts entry }
-	#puts ret.answer.first
-	#resolv = Dnsruby::DNS.new
-	#resolv.do_caching = false;
-	#ip = resolv.getaddress(names[range(0,0).to_i])
-  #p Dnsruby::Resolv.getname("210.251.121.214")
 	#ip = 1;
-	clientSession = TCPSocket.new( "192.168.1.73", 2113 )
+	puts ARGV.first
+	clientSession = TCPSocket.new( ARGV.first, 2113 )
 	puts "log: starting connection"
 	puts "log: sending request to worker:#{ip}"
 	#generate dummy loads
-	cpu_usage = range(min, max) 
-	io_usage = range(min, max)
+	cpu_usage = range(min, max).to_f 
+	io_usage = range(min, max).to_f
 	#cpu_idle = range(min, max)
-	total_traffic = range(min, max)
-	liveness_period = range(1, 5).to_i
+	total_traffic = range(min, max).to_f
+	liveness_period = range(60, 120).to_i
 	#generate request message (we do not add request here)
 	message = "WORKLOAD##{ip}$#{io_usage}$#{cpu_usage}$#{total_traffic}$#{liveness_period}#none#\n"
 	#send request message
