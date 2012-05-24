@@ -91,7 +91,7 @@ node_t *list_g;
 pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
 
-inline void mywait(int timeInSec)
+static inline void mywait(int timeInSec)
 {
   struct timespec timeToWait;
   struct timeval now;
@@ -156,46 +156,24 @@ static inline char *md5_digest(const char *input, size_t size)
 
 static inline int parse_response(char *response, ns_profiler_a_node_t * currnode)
 {
-  //char *timestamp;
-  //double stats[3];
-  //char *message = strtok(response, "#");
-  //char *msg_digest = strtok(NULL, "#");
-  //  DPRINT("DIGEST*=%p\n", msg_digest);
   int i;
-  //printf("?=%s", msg_digest);
-  //print2hex(msg_digest, 16);
-  //char *digest = md5_digest(message);
-  //print2hex(digest, 16);
-  //for (i = 0; i < 16; i++) {
-  //  if (msg_digest[i] != digest[i])
-  //    return -1;
-  //}
-  //stats[0] = atof(strtok(message, "$"));
-  //for (i = 1; i < 3; i++) {
-  //  stats[i] = atof(strtok(NULL, "$"));
-  //}
-  //timestamp = strtok(NULL, "$");
-  //DPRINT("io usages=%lf, cpu usage=%lf, network traffic=%lf\n", stats[0], stats[1], stats[2]);
-  //DPRINT("timestamp=%s\n", timestamp);
+  
   memcpy( &currnode->io_load, response, 4);
   memcpy( &currnode->cpu_load, response+4, 4);
   memcpy( &currnode->net_load, response+8, 4);
-  //char *msg_digest = strdup(&response[12]);
-	char msg_digest[16];
-	memcpy(msg_digest, response+12, 16);
+  
+  char msg_digest[16];
+  memcpy(msg_digest, response+12, 16);
   response[12]='\0';
-	//print2hex(msg_digest, 16);
-	char *digest = md5_digest(response, 12);
-	//print2hex(digest, 16);  
-	for (i = 0; i < 16; i++) {
+  //print2hex(msg_digest, 16);
+  char *digest = md5_digest(response, 12);
+  //print2hex(digest, 16);  
+  for (i = 0; i < 16; i++) {
     if (msg_digest[i] != digest[i]) {
-			DPRINT("Hash check failed\n");      
-			return -1;
-		}
+      DPRINT("Hash check failed\n");      
+      return -1;
+    }
   }    
-  //currnode->io_load = stats[1];
-  //currnode->cpu_load = stats[1];
-  //currnode->net_load = stats[2];
   //DPRINT("\nMessage stats\n");
   //DPRINT("\t\tcpu load=%lf\n", currnode->cpu_load);
   //DPRINT("\t\tio load=%lf\n", currnode->io_load);
@@ -251,12 +229,9 @@ static inline char *sendMessage(char *orig_message, char *ip, int sockfd)
   n = recv(sockfd, response, 28, 0);
   response[28]='\0';
   if (n <= 0) {
-		DPRINT("Recv failed with code:%d\n", n);    
-		return NULL;
-	}
-//TODO: if zero, connection has been closed, maybe should handle gracefully
-//  if (n < 0)
-//    error("ERROR reading from socket");
+    DPRINT("Recv failed with code:%d\n", n);    
+    return NULL;
+  }
   return response;
 }
 
@@ -302,18 +277,18 @@ static inline void ns_profiler_poll_workers(node_t * cur)
     response = sendMessage(message, ip2, sockfd);
     if ( !response || parse_response(response, &(cur->addr_stats[i]))) {
       if (response)
-		//fprintf(stderr, "Checksum Error in worker's message\n");
-		DPRINT("Checksum Error in worker's message\n");
-	  else
-	    //fprintf(stderr, "Socket Closed\n");
-	    DPRINT("Socket Closed\n");
+    //fprintf(stderr, "Checksum Error in worker's message\n");
+    DPRINT("Checksum Error in worker's message\n");
+    else
+      //fprintf(stderr, "Socket Closed\n");
+      DPRINT("Socket Closed\n");
       // handle this somehow? The worker is down put it last in the list ;)
       cur->addr_stats[i].cpu_load = 255.0f;
       cur->addr_stats[i].io_load = 255.0f;
       cur->addr_stats[i].net_load = 255.0f;
     }
-		if(response != NULL)
-			free(response);
+    if(response != NULL)
+      free(response);
     //printf("%s\n",message);
     DPRINT("\t%s's Stats\n", ip2);
     DPRINT("\t\tcpu load=%lf\n", cur->addr_stats[i].cpu_load);

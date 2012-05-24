@@ -65,6 +65,15 @@
 #include <dns/zone.h>
 #include <dns/zonekey.h>
 
+// #define LBBIND
+
+#ifdef LBBIND
+#define LB_RDLOCK(x) pthread_rwlock_rdlock(x)
+#define LB_WRLOCK(x) pthread_rwlock_wrlock(x)
+#define LB_UNLOCK(x) pthread_rwlock_unlock(x)
+#define LB_INIT_LOCK(x) pthread_rwlock_init(x, NULL)
+#endif
+
 #ifdef DNS_RBTDB_VERSION64
 #include "rbtdb64.h"
 #else
@@ -2795,6 +2804,15 @@ bind_rdataset(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 	 */
 	rdataset->privateuint4 = 0;
 	rdataset->private5 = NULL;
+  
+#ifdef LBBIND
+  /* 
+   * ZAKKAK
+   * use private1 as rwlock
+   */
+  rdataset->private1 = malloc(sizeof(pthread_rwlock_t));
+  LB_INIT_LOCK( rdataset->private1);
+#endif
 
 	/*
 	 * Add noqname proof.
@@ -7858,6 +7876,7 @@ rdataset_disassociate(dns_rdataset_t *rdataset) {
 	detachnode(db, &node);
 }
 
+#ifndef LBBIND
 static isc_result_t
 rdataset_first(dns_rdataset_t *rdataset) {
 	unsigned char *raw = rdataset->private3;        /* RDATASLAB */
@@ -7990,6 +8009,150 @@ rdataset_count(dns_rdataset_t *rdataset) {
 
 	return (count);
 }
+#else
+// ZAKKAK
+// changed to use the offsets
+static isc_result_t
+rdataset_first(dns_rdataset_t *rdataset) {
+  unsigned char *raw;
+  unsigned int count;
+  unsigned int offset;
+
+  LB_RDLOCK(rdataset->private1);
+  
+  raw = rdataset->private3;
+  
+//  count = raw[0] * 256 + raw[1];
+  count = raw[0] << 8 | raw[1];
+  if (count == 0) {
+    rdataset->private5 = NULL;
+    return (ISC_R_NOMORE);
+  }
+  offset = (raw[2] << 24) | (raw[3] << 16) | (raw[4] << 8) | (raw[5]);
+//   fprintf(stderr, "Index1=0 offset=%lu base=%p\n", offset, raw);
+// #if DNS_RDATASET_FIXED
+//  raw += 2 + (4 * count);
+// #else
+//  raw += 2;
+// #endif
+  
+  /*
+   * The privateuint4 field is the number of rdata beyond the cursor
+   * position, so we decrement the total count by one before storing
+   * it.
+   */
+  count--;
+  rdataset->privateuint4 = count;
+//   rdataset->private5 = raw;
+  rdataset->private5 = raw + offset;
+  
+  LB_UNLOCK(rdataset->private1);
+
+  return (ISC_R_SUCCESS);
+}
+
+// ZAKKAK
+// changed to use the offsets
+static isc_result_t
+rdataset_next(dns_rdataset_t *rdataset) {
+  unsigned int count;
+//  unsigned int length;
+  unsigned int orig_count;
+  unsigned int current;
+  unsigned int offset;
+  unsigned char *raw;
+
+  LB_RDLOCK(rdataset->private1);
+
+  count = rdataset->privateuint4;
+  if (count == 0)
+    return (ISC_R_NOMORE);
+  raw = rdataset->private3;
+  orig_count = raw[0] << 8 | raw[1];
+  current = orig_count - count;
+  count--;
+  rdataset->privateuint4 = count;
+  raw += 2 + current*4;
+  offset = (raw[0] << 24) | (raw[1] << 16) | (raw[2] << 8) | (raw[3]);
+  
+  rdataset->private5 = (char*)rdataset->private3 + offset;
+  
+  LB_UNLOCK(rdataset->private1);
+
+  return (ISC_R_SUCCESS);
+}
+
+static void
+rdataset_current(dns_rdataset_t *rdataset, dns_rdata_t *rdata) {
+  unsigned char *raw;
+  isc_region_t r;
+  unsigned int length;
+  unsigned int flags = 0;
+  
+//   printf("KKK\n");
+  LB_RDLOCK(rdataset->private1);
+//   printf("LLL\n");
+  raw = rdataset->private5;
+
+  REQUIRE(raw != NULL);
+
+  length = raw[0] * 256 + raw[1];
+  unsigned int index = raw[2] * 256 + raw[3];
+//   fprintf(stderr, "Index=%lu length=%lu raw=%p base=%p\n", index, length, &raw[2], rdataset->private3);
+#if DNS_RDATASET_FIXED
+  raw += 4;
+#else
+  raw += 2;
+#endif
+  if (rdataset->type == dns_rdatatype_rrsig) {
+    if (*raw & DNS_RDATASLAB_OFFLINE)
+      flags |= DNS_RDATA_OFFLINE;
+    length--;
+    raw++;
+  }
+  r.length = length;
+  r.base = raw;
+  dns_rdata_fromregion(rdata, rdataset->rdclass, rdataset->type, &r);
+  rdata->flags |= flags;
+  
+  LB_UNLOCK(rdataset->private1);
+}
+
+static void
+rdataset_clone(dns_rdataset_t *source, dns_rdataset_t *target) {
+  
+  // FIXME: possible deadlock?
+  LB_RDLOCK(source->private1);
+  LB_WRLOCK(target->private1);
+  
+  *target = *source;
+
+  /*
+   * Reset iterator state.
+   */
+  target->privateuint4 = 0;
+  target->private5 = NULL;
+  
+  LB_UNLOCK(target->private1);
+  LB_UNLOCK(source->private1);
+}
+
+static unsigned int
+rdataset_count(dns_rdataset_t *rdataset) {
+  unsigned char *raw;
+  unsigned int count;
+  
+  LB_RDLOCK(rdataset->private1);
+
+  raw = rdataset->private3;
+  
+  count = raw[0] * 256 + raw[1];
+  
+  LB_UNLOCK(rdataset->private1);
+
+  return (count);
+}
+#endif
 
 static isc_result_t
 rdataset_getnoqname(dns_rdataset_t *rdataset, dns_name_t *name,
