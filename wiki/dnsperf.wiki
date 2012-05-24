@@ -1,10 +1,12 @@
 #summary How to use dnsperf
 
 ==Dependencies==
+ * bind9utils
  * lbbind-dev
  * libssl-dev
  * libcap-dev
  * linkrb5-dev
+ * libxml2-dev
 
 ==COMPILE / INSTALL==
 {{{
