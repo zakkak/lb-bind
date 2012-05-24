@@ -264,6 +264,7 @@ dns_rdataset_first(dns_rdataset_t *rdataset) {
 	REQUIRE(DNS_RDATASET_VALID(rdataset));
 	REQUIRE(rdataset->methods != NULL);
 
+//   fprintf(stderr, "first2=%p\n", rdataset->methods->first);
 	return ((rdataset->methods->first)(rdataset));
 }
 

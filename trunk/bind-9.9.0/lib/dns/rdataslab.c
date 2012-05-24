@@ -28,12 +28,27 @@
 #include <isc/region.h>
 #include <isc/string.h>		/* Required for HP/UX (and others?) */
 #include <isc/util.h>
+#include <isc/rwlock.h>
 
 #include <dns/result.h>
 #include <dns/rdata.h>
 #include <dns/rdataset.h>
 #include <dns/rdataslab.h>
 #include <dns/adb.h>
+
+// #define LOCKING
+
+#ifdef LOCKING
+#define RDLOCK(x) pthread_rwlock_rdlock(x)
+#define WRLOCK(x) pthread_rwlock_wrlock(x)
+#define UNLOCK(x) pthread_rwlock_unlock(x)
+#define INIT_LOCK(x) pthread_rwlock_init(x, NULL)
+#else
+#define RDLOCK(x) 
+#define WRLOCK(x) 
+#define UNLOCK(x) 
+#define INIT_LOCK(x) 
+#endif
 
 /*
  * The rdataslab structure allows iteration to occur in both load order
@@ -341,10 +356,14 @@ rdataset_disassociate(dns_rdataset_t *rdataset) {
 // changed to use the offsets
 static isc_result_t
 rdataset_first(dns_rdataset_t *rdataset) {
-	unsigned char *raw = rdataset->private3;
-	unsigned int count;
+  unsigned char *raw;
+  unsigned int count;
   unsigned int offset;
 
+  RDLOCK(rdataset->private1);
+  
+  raw = rdataset->private3;
+  
 // 	count = raw[0] * 256 + raw[1];
   count = raw[0] << 8 | raw[1];
 	if (count == 0) {
@@ -368,6 +387,8 @@ rdataset_first(dns_rdataset_t *rdataset) {
 	rdataset->privateuint4 = count;
 //   rdataset->private5 = raw;
   rdataset->private5 = raw + offset;
+  
+  UNLOCK(rdataset->private1);
 
 	return (ISC_R_SUCCESS);
 }
@@ -376,43 +397,44 @@ rdataset_first(dns_rdataset_t *rdataset) {
 // changed to use the offsets
 static isc_result_t
 rdataset_next(dns_rdataset_t *rdataset) {
-	unsigned int count;
+  unsigned int count;
 // 	unsigned int length;
   unsigned int orig_count;
   unsigned int current;
   unsigned int offset;
-	unsigned char *raw;
+  unsigned char *raw;
 
-	count = rdataset->privateuint4;
-	if (count == 0)
-		return (ISC_R_NOMORE);
+  RDLOCK(rdataset->private1);
+
+  count = rdataset->privateuint4;
+  if (count == 0)
+    return (ISC_R_NOMORE);
   raw = rdataset->private3;
   orig_count = raw[0] << 8 | raw[1];
   current = orig_count - count;
-	count--;
-	rdataset->privateuint4 = count;
+  count--;
+  rdataset->privateuint4 = count;
   raw += 2 + current*4;
   offset = (raw[0] << 24) | (raw[1] << 16) | (raw[2] << 8) | (raw[3]);
-//   fprintf(stderr, "Index1=%lu offset=%lu base=%p\n", current, offset, rdataset->private3);
-// 	raw = rdataset->private5;
-// 	length = raw[0] * 256 + raw[1];
-// #if DNS_RDATASET_FIXED
-// 	raw += length + 4;
-// #else
-// 	raw += length + 2;
-// #endif
-// 	rdataset->private5 = raw;
+  
   rdataset->private5 = (char*)rdataset->private3 + offset;
+  
+  UNLOCK(rdataset->private1);
 
 	return (ISC_R_SUCCESS);
 }
 
 static void
 rdataset_current(dns_rdataset_t *rdataset, dns_rdata_t *rdata) {
-	unsigned char *raw = rdataset->private5;
+	unsigned char *raw;
 	isc_region_t r;
 	unsigned int length;
 	unsigned int flags = 0;
+  
+//   printf("KKK\n");
+  RDLOCK(rdataset->private1);
+//   printf("LLL\n");
+  raw = rdataset->private5;
 
 	REQUIRE(raw != NULL);
 
@@ -434,25 +456,41 @@ rdataset_current(dns_rdataset_t *rdataset, dns_rdata_t *rdata) {
 	r.base = raw;
 	dns_rdata_fromregion(rdata, rdataset->rdclass, rdataset->type, &r);
 	rdata->flags |= flags;
+  
+  UNLOCK(rdataset->private1);
 }
 
 static void
 rdataset_clone(dns_rdataset_t *source, dns_rdataset_t *target) {
-	*target = *source;
+  
+  // FIXME: possible deadlock?
+  RDLOCK(source->private1);
+  WRLOCK(target->private1);
+	
+  *target = *source;
 
 	/*
 	 * Reset iterator state.
 	 */
 	target->privateuint4 = 0;
 	target->private5 = NULL;
+  
+  UNLOCK(target->private1);
+  UNLOCK(source->private1);
 }
 
 static unsigned int
 rdataset_count(dns_rdataset_t *rdataset) {
-	unsigned char *raw = rdataset->private3;
+	unsigned char *raw;
 	unsigned int count;
+  
+  RDLOCK(rdataset->private1);
 
+  raw = rdataset->private3;
+  
 	count = raw[0] * 256 + raw[1];
+  
+  UNLOCK(rdataset->private1);
 
 	return (count);
 }
@@ -527,34 +565,14 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
 
   assert(addr_stats);
   
+//   printf("AAA\n");
+  WRLOCK(rdataset->private1);
+//   printf("BBB\n");
+  
   base = raw = rdataset->private3;
   // the first two bytes are the number of items
   nitems =  raw[0] << 8 | raw[1];
   raw += 2;
-
-//   if (nitems > 1) {
-//     x = malloc(nitems * sizeof(struct zakkak_off));
-//   } else
-//     return result;
-
-  // after the number of items it is the offsettable (nitems*4)
-  /*
-   * Save all the current offsets to an array putting them an order.
-   */
-//   for (i = 0; i < nitems; i++) {
-//     x[i].offset = (raw[0] << 24) | (raw[1] << 16) | (raw[2] << 8) | raw[3];
-//     raw += 4;
-//     
-//     for (k = 0; k < nitems; k++) {
-//       x[i].order = addr_stats
-//     x[i].order = nitems-i;
-// //     fprintf(stderr, "%d offset[%lu]=%lu\n", i, x[i].order, x[i].offset);
-//   }
-// 
-//   /*
-//    * order x
-//    */
-//   qsort(x, nitems, sizeof(struct zakkak_off), cmp);
 
   // point raw to the start of the offsettable
   raw = base + 2;
@@ -578,6 +596,8 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
    */
   rdataset->privateuint4 = 0;
   rdataset->private5 = NULL;
+  
+  UNLOCK(rdataset->private1);
 
 //   free(x);
   return result;
@@ -703,15 +723,25 @@ dns_rdataslab_transformrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
    */
   rdataset->methods = &rdataset_methods;
 
+//   fprintf(stderr, "first1=%p\n", rdataset->methods->first);
   /*
    * Reset iterator state.
    */
   rdataset->privateuint4 = 0;
   rdataset->private5 = NULL;
-
+  
+#ifdef LOCKING
+  /* 
+   * use private1 as rwlock
+   */
+  rdataset->private1 = malloc(sizeof(pthread_rwlock_t));
+  INIT_LOCK( rdataset->private1);
+#endif
+  
  free_rdatas:
   if (x != NULL)
     free(x);
+  
   return result;
 }
 #endif
