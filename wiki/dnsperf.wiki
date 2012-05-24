@@ -1,4 +1,4 @@
-#summary How to use dnsperf
+#summary How to deploy and run dnsperf
 
 ==Dependencies==
  * bind9utils
