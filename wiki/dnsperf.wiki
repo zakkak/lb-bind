@@ -2,6 +2,9 @@
 
 ==Dependencies==
  * lbbind-dev
+ * libssl-dev
+ * libcap-dev
+ * linkrb5-dev
 
 ==COMPILE / INSTALL==
 {{{
