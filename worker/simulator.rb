@@ -1,7 +1,9 @@
 #!/usr/bin/ruby
 require 'socket'
 require 'digest/md5'
+require 'rubygems'
 require 'daemons'
+require 'thread'
 
 #def every_n_seconds(n)
 #  loop do
@@ -16,43 +18,54 @@ require 'daemons'
 # puts "#{Time.now.strftime("%X")}... beep!"
 #end
 
-
+#init workers
 $workers = Hash.new
+for i in 0..13 do
+	key = "192.168.18.#{i}"
+	new_load = Struct.new(:cpu_usage, :io_usage, :total_traffic, :liveness_period)
+	loads = Array[new_load.new(0.to_f, 0.to_f, 0.to_f, 0.to_i)]
+	workloads = Struct.new(:loads_num, :loads, :cpu_usage, :io_usage, :total_traffic, :lock)
+	$workers[key] = workloads.new(1, loads, 0.to_f, 0.to_f, 0.to_f, Mutex.new)
+end
+
 
 def range (min, max)
     rand * (max-min) + min
 end
 
-def simulate_system_tick
+#def simulate_system_tick
+Thread.start do
 	#puts "****** TICK ******"
-	$workers.each { | ip, val |
-		if($workers[ip].loads_num > 0)
-			$workers[ip].loads.each_index { | i |
-				$workers[ip].loads[i].liveness_period = $workers[ip].loads[i].liveness_period-1
-					if($workers[ip].loads[i].liveness_period == 0)
-						#remove the finished job
-						#puts "log: Removing job #{i} from #{ip}"
-						if($workers[ip].cpu_usage < $workers[ip].loads[i].cpu_usage)
-							put "************ WE DRUNK HIM! ***************"
-							$workers[ip].cpu_usage = 0
-						end
-						if($workers[ip].io_usage < $workers[ip].loads[i].io_usage)
-							put "************ WE DRUNK HIM! ***************"
-							$workers[ip].cpu_usage = 0
-						end
-						if($workers[ip].total_traffic < $workers[ip].loads[i].total_traffic)
-							put "************ WE DRUNK HIM! ***************"
-							$workers[ip].cpu_usage = 0
-						end
-						$workers[ip].cpu_usage = $workers[ip].cpu_usage - $workers[ip].loads[i].cpu_usage
-						$workers[ip].io_usage = $workers[ip].io_usage - $workers[ip].loads[i].io_usage
-						$workers[ip].total_traffic = $workers[ip].total_traffic - $workers[ip].loads[i].total_traffic
-						$workers[ip].loads.delete_at(i)
-						$workers[ip].loads_num = $workers[ip].loads_num-1		
-					end
+	loop do
+		sleep(1)
+		$workers.each { | ip, val |
+			val.lock.synchronize {
+				if($workers[ip].loads_num > 0)
+					$workers[ip].loads.each_index { | i |
+						#puts "#{$workers[ip].loads[i].liveness_period}"
+						$workers[ip].loads[i].liveness_period = $workers[ip].loads[i].liveness_period-1
+							if($workers[ip].loads[i].liveness_period == 0)
+								#remove the finished job
+								#puts "log: Removing job #{i} from #{ip}"
+								#puts "#{$workers[ip].loads_num}"
+								if($workers[ip].loads_num == 1)
+									#there is some issue and sometimes float1 - float2 where float1==float2 results in huge number...
+									$workers[ip].cpu_usage = 0
+									$workers[ip].io_usage = 0
+									$workers[ip].total_traffic = 0
+								else
+									$workers[ip].cpu_usage = $workers[ip].cpu_usage - $workers[ip].loads[i].cpu_usage
+									$workers[ip].io_usage = $workers[ip].io_usage - $workers[ip].loads[i].io_usage
+									$workers[ip].total_traffic = $workers[ip].total_traffic - $workers[ip].loads[i].total_traffic
+								end		
+								$workers[ip].loads.delete_at(i)
+								$workers[ip].loads_num = $workers[ip].loads_num-1
+							end
+					}
+				end
 			}
-		end
-	}
+		}
+	end
 	#puts "****** TACK ******"
 end
 
@@ -70,21 +83,24 @@ def proc_workload_message (message)
 		new_load = Struct.new(:cpu_usage, :io_usage, :total_traffic, :liveness_period)
 		#loads = Array()
 		loads = Array[new_load.new(cpu_usage.to_f, io_usage.to_f, total_traffic.to_f, liveness_period.to_i)]
-		workloads = Struct.new(:loads_num, :loads, :cpu_usage, :io_usage, :total_traffic)
-		$workers[ip] = workloads.new(1, loads, cpu_usage.to_f, io_usage.to_f, total_traffic.to_f)
+		workloads = Struct.new(:loads_num, :loads, :cpu_usage, :io_usage, :total_traffic, :lock)
+		$workers[ip] = workloads.new(1, loads, cpu_usage.to_f, io_usage.to_f, total_traffic.to_f, Mutex.new)
 		#load_num = $workers[ip].loads_num
 	else
 		new_load = Struct.new(:cpu_usage, :io_usage, :total_traffic, :liveness_period)
-		$workers[ip].loads_num = $workers[ip].loads_num+1 #can't get it working with ++
-		load_num = $workers[ip].loads_num-1
-		$workers[ip].loads[load_num] = new_load.new(cpu_usage.to_f, io_usage.to_f, total_traffic.to_f, liveness_period.to_i)
-		#add new loads to total loads
-		$workers[ip].cpu_usage = $workers[ip].cpu_usage + $workers[ip].loads[load_num].cpu_usage
-		$workers[ip].io_usage = $workers[ip].io_usage + $workers[ip].loads[load_num].io_usage
-		$workers[ip].total_traffic = $workers[ip].total_traffic + $workers[ip].loads[load_num].total_traffic
-		#$workers[ip] = workloads.new(0, loads.new(cpu_usage, io_usage, total_traffic, liveness_period), cpu_usage, io_usage, total_traffic)
+		$workers[ip].lock.synchronize {
+			$workers[ip].loads_num = $workers[ip].loads_num+1 #can't get it working with ++
+			load_num = $workers[ip].loads_num-1
+			$workers[ip].loads[load_num] = new_load.new(cpu_usage.to_f, io_usage.to_f, total_traffic.to_f, liveness_period.to_i)
+			#add new loads to total loads
+			$workers[ip].cpu_usage = $workers[ip].cpu_usage + $workers[ip].loads[load_num].cpu_usage
+			$workers[ip].io_usage = $workers[ip].io_usage + $workers[ip].loads[load_num].io_usage
+			$workers[ip].total_traffic = $workers[ip].total_traffic + $workers[ip].loads[load_num].total_traffic
+			#$workers[ip] = workloads.new(0, loads.new(cpu_usage, io_usage, total_traffic, liveness_period), cpu_usage, io_usage, total_traffic)
+		}
 	end
 	#puts load_num
+	#puts "log: worker load #{ip}"	
 	#puts "log: cpu_usage:#{$workers[ip].cpu_usage}"
 	#puts "log: io_usage:#{$workers[ip].io_usage}"
 	#puts "log: total_traffic:#{$workers[ip].total_traffic}"
@@ -96,17 +112,70 @@ end
 
 #this thread dumps worker loads to a file
 Thread.start do
-	File.open("loads_#{Time.now.strftime("%X")}.txt", 'a') do | f |
-		loop do
-			sleep(60)			
-			f.puts "Probe at #{Time.now.strftime("%X")}"
-			$workers.each { | ip, val | 
-				f.puts "Worker #{ip}"
-				f.puts "\tcpu load=#{val.cpu_usage}"
-				f.puts "\tio load=#{val.io_usage}"
-				f.puts "\tnet load =#{val.total_traffic}"
+	`echo "remove all dumps"`
+	`rm *.csv`
+	loop do
+		sleep(1)
+		#puts "++++++++++++++++ LOOPING ++++++++++++++++++++"
+		$workers.each { | ip, val |
+		#puts "++++++++++++++++#{ip}++++++++++++++++++++"
+			val.lock.synchronize {		
+				if(!File.exists?("load_#{ip}.csv"))
+					File.open("load_#{ip}.csv", 'w') do | f |			
+						f << " " 
+						f << "\t cpu usage "
+						f << "\t io_usage "
+						f << "\t total traffic "
+						f << "\t total load\n"
+						#also write first entry
+						f << "#{Time.now.strftime("%X")} " 
+						f << "\t #{val.cpu_usage} "
+						f << "\t #{val.io_usage} "
+						f << "\t #{val.total_traffic} "
+						total_load = (val.cpu_usage*0.50)+(val.io_usage*0.25)+(val.total_traffic*0.25)
+						f << "\t #{total_load}\n"
+					end
+				else
+					File.open("load_#{ip}.csv", 'a') do | f |			
+						#puts "writing..."					
+						f << "#{Time.now.strftime("%X")} " 
+						f << "\t #{val.cpu_usage} "
+						f << "\t #{val.io_usage} "
+						f << "\t #{val.total_traffic} "
+						total_load = (val.cpu_usage*0.50)+(val.io_usage*0.25)+(val.total_traffic*0.25)
+						f << "\t #{total_load}\n"
+					end
+				end
 			}
-			f.puts ""
+		}
+		#save all worker loads		
+		if(!File.exists?("worker_loads.csv"))
+			File.open("worker_loads.csv", 'w') do | f |
+				$workers.each { | ip, val |
+					val.lock.synchronize {			
+						f << " " 
+						f << "\t #{ip}'s load "
+						#also write first entry
+					}						
+				}
+				f << "\n#{Time.now.strftime("%X")} " 
+				$workers.each { | ip, val |
+					val.lock.synchronize {			
+						total_load = (val.cpu_usage*0.50)+(val.io_usage*0.25)+(val.total_traffic*0.25)
+						f << "\t #{total_load}"
+					}						
+				}					
+			end
+		else
+			File.open("worker_loads.csv", 'a') do | f |
+				f << "\n#{Time.now.strftime("%X")} " 
+				$workers.each { | ip, val |
+					val.lock.synchronize {			
+						total_load = (val.cpu_usage*0.50)+(val.io_usage*0.25)+(val.total_traffic*0.25)
+						f << "\t #{total_load}"
+					}						
+				}				
+			end
 		end
 	end
 end
@@ -154,9 +223,11 @@ loop do
 				#io_usage = range(0, 100)
 				#total_traffic = range(0, 100)
 			else
-				cpu_usage = $workers[ip].cpu_usage 
-				io_usage = $workers[ip].io_usage
-				total_traffic = $workers[ip].total_traffic
+				$workers[ip].lock.synchronize {
+					cpu_usage = $workers[ip].cpu_usage 
+					io_usage = $workers[ip].io_usage
+					total_traffic = $workers[ip].total_traffic
+				}
 			end
 			#puts "Parsing network statistics"
 			#total_traffic = 0
@@ -181,7 +252,6 @@ loop do
   			#session.puts message
 			#puts "log: sending goodbye"
 			#session.puts "Server: Goodbye"
-			simulate_system_tick()	
 		end
 	end
 end
