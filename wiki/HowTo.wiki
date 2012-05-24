@@ -11,8 +11,6 @@ How to download, configure, compile, install and run lb-bind
 ==Requires==
 
   * libssl-dev
-  * sysstat
-  * ruby-daemons
 
 ==Download==
 {{{
