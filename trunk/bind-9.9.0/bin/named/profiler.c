@@ -88,12 +88,18 @@ typedef struct node {
 
 node_t *list_g;
 
+#if 1 //cond_timedwait
 pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
+#endif
 
 static inline void mywait(int timeInSec)
 {
+#if 1 //cond_timedwait
   struct timespec timeToWait;
+#else
+  struct timeval timeToWait;
+#endif
   struct timeval now;
   int rt;
 
@@ -103,11 +109,30 @@ static inline void mywait(int timeInSec)
   gettimeofday(&now,NULL);
 
   timeToWait.tv_sec = now.tv_sec + timeInSec;
-  timeToWait.tv_nsec = now.tv_usec*1000;
 
+#if 1 //cond_timedwait
+  timeToWait.tv_nsec = now.tv_usec*1000;
+  
   pthread_mutex_lock(&fakeMutex);
   rt = pthread_cond_timedwait(&fakeCond, &fakeMutex, &timeToWait);
   pthread_mutex_unlock(&fakeMutex);
+#elif 1 //busy_spin
+  timeToWait.tv_usec = now.tv_usec;
+  
+  gettimeofday(&now,NULL);
+  while( timeToWait.tv_sec > now.tv_sec || ((timeToWait.tv_sec == now.tv_sec) && timeToWait.tv_usec > now.tv_usec)) {
+    gettimeofday(&now,NULL);
+  }
+#else
+  timeToWait.tv_usec = now.tv_usec;
+
+  pthread_yield();
+  gettimeofday(&now,NULL);
+  while( timeToWait.tv_sec > now.tv_sec || ((timeToWait.tv_sec == now.tv_sec) && timeToWait.tv_usec > now.tv_usec)) {
+    pthread_yield();
+    gettimeofday(&now,NULL);
+  }
+#endif
 }
 
 /*** WORKER COMMUNICATION FUNCTIONS ***/
