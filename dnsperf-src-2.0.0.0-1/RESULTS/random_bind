@@ -1,0 +1,30 @@
+DNS Performance Testing Tool
+Nominum Version 2.0.0.0
+
+[Status] Command line: dnsperf -d testfile -s 192.168.1.200 -c 2 -n 500000
+[Status] Sending queries (to 192.168.1.200)
+[Status] Started at: Thu May 24 05:11:00 2012
+[Status] Stopping after 500000 runs through file
+[Timeout] Query timed out: msg id 0
+[Timeout] Query timed out: msg id 0
+[Timeout] Query timed out: msg id 1
+[Timeout] Query timed out: msg id 2
+[Timeout] Query timed out: msg id 1
+[Timeout] Query timed out: msg id 2
+[Timeout] Query timed out: msg id 3
+[Status] Testing complete (end of file)
+
+Statistics:
+
+  Queries sent:         6000000
+  Queries completed:    5999993 (100.00%)
+  Queries lost:         7 (0.00%)
+
+  Response codes:       NOERROR 5999993 (100.00%)
+  Average packet size:  request 31, response 192
+  Run time (s):         298.916225
+  Queries per second:   20072.490210
+
+  Average Latency (s):  0.004906 (min 0.000739, max 0.101271)
+  Latency StdDev (s):   0.001176
+
