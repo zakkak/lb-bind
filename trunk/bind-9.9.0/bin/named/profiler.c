@@ -55,12 +55,39 @@
 
 #define MYPRINT(...) fprintf(stderr, __VA_ARGS__)
 #define EPRINT(...) do{ fprintf(stderr, "\033[1;31m"); MYPRINT(__VA_ARGS__); fprintf(stderr, "\033[m"); exit(1); }while(0)
+          
+#define DEBUG 0
 
-#if 0
+#if DEBUG
 #define DPRINT MYPRINT
 #else
 #define DPRINT(...)
 #endif
+
+///////////////////////////////// RDTSC ///////////////////////////////////////
+#ifdef __GNUC__
+#define VOLATILE __volatile__
+#define ASM __asm__
+#else
+/* we can at least hope the following works, it probably won't */
+#define ASM asm
+#define VOLATILE 
+#endif
+
+#define INT64 unsigned long long
+#define INT32 unsigned int
+
+typedef union
+{       INT64 int64;
+	        struct {INT32 lo, hi;} int32;
+} tsc_counter;
+
+#define RDTSC(cpu_c) \
+	 ASM VOLATILE ("rdtsc" : "=a" ((cpu_c).int32.lo), "=d"((cpu_c).int32.hi))
+#define CPUID(x) \
+	 ASM VOLATILE ("cpuid" : "=a" (x) : "0" (x) : "bx", "cx", "dx" )
+
+///////////////////////////////////////////////////////////////////////////////
 
 // typedef struct ht_node_v {
 //   ns_profiler_a_node_t *addr_stats[LWRES_MAX_ADDRS];
@@ -95,7 +122,7 @@ pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
 
 static inline void mywait(int timeInSec)
 {
-#if 1 //cond_timedwait
+#if 1 //cond_timedwait and nanosleep
   struct timespec timeToWait;
 #else
   struct timeval timeToWait;
@@ -110,7 +137,11 @@ static inline void mywait(int timeInSec)
 
   timeToWait.tv_sec = now.tv_sec + timeInSec;
 
-#if 1 //cond_timedwait
+#if 1 //nanosleep
+  timeToWait.tv_sec = timeInSec;
+  timeToWait.tv_nsec = 0;
+  assert(nanosleep(&timeToWait, NULL)==0);
+#elif 1 //cond_timedwait
   timeToWait.tv_nsec = now.tv_usec*1000;
   
   pthread_mutex_lock(&fakeMutex);
@@ -357,6 +388,11 @@ static void ns_profiler_update_addrs()
     DPRINT("Here we go again!!!\n");
     current = list_g;
 
+#if DEBUG
+    tsc_counter tsc_start, tsc_end;
+	RDTSC(tsc_start);
+#endif
+
     while (current) {
 
       if (current->naddrs > 0) {
@@ -375,6 +411,12 @@ static void ns_profiler_update_addrs()
 
       current = current->next;
     }
+
+#if DEBUG
+	RDTSC(tsc_end);
+#endif
+	DPRINT("Polling ticks=%llu\n", tsc_end.int64-tsc_start.int64);
+
   }
 }
 
@@ -559,4 +601,6 @@ void ns_profiler_init()
 {
   isc_thread_t thread;
   isc_thread_create(ns_profiler_thread, NULL, &thread);
+//   pthread_t thread;
+//   pthread_create(&thread, NULL, ns_profiler_thread, NULL);
 }
