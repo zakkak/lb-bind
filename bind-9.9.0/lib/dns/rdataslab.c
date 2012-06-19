@@ -36,18 +36,18 @@
 #include <dns/rdataslab.h>
 #include <dns/adb.h>
 
-// #define LOCKING
+// #define LB_LOCKING
 
-#ifdef LOCKING
-#define RDLOCK(x) pthread_rwlock_rdlock(x)
-#define WRLOCK(x) pthread_rwlock_wrlock(x)
-#define UNLOCK(x) pthread_rwlock_unlock(x)
-#define INIT_LOCK(x) pthread_rwlock_init(x, NULL)
+#ifdef LB_LOCKING
+#define LB_RDLOCK(x) pthread_rwlock_rdlock(x)
+#define LB_WRLOCK(x) pthread_rwlock_wrlock(x)
+#define LB_UNLOCK(x) pthread_rwlock_unlock(x)
+#define LB_INIT_LOCK(x) pthread_rwlock_init(x, NULL)
 #else
-#define RDLOCK(x) 
-#define WRLOCK(x) 
-#define UNLOCK(x) 
-#define INIT_LOCK(x) 
+#define LB_RDLOCK(x) 
+#define LB_WRLOCK(x) 
+#define LB_UNLOCK(x) 
+#define LB_INIT_LOCK(x) 
 #endif
 
 /*
@@ -360,7 +360,7 @@ rdataset_first(dns_rdataset_t *rdataset) {
   unsigned int count;
   unsigned int offset;
 
-  RDLOCK(rdataset->private1);
+  LB_RDLOCK(rdataset->private1);
   
   raw = rdataset->private3;
   
@@ -388,7 +388,7 @@ rdataset_first(dns_rdataset_t *rdataset) {
 //   rdataset->private5 = raw;
   rdataset->private5 = raw + offset;
   
-  UNLOCK(rdataset->private1);
+  LB_UNLOCK(rdataset->private1);
 
 	return (ISC_R_SUCCESS);
 }
@@ -404,7 +404,7 @@ rdataset_next(dns_rdataset_t *rdataset) {
   unsigned int offset;
   unsigned char *raw;
 
-  RDLOCK(rdataset->private1);
+  LB_RDLOCK(rdataset->private1);
 
   count = rdataset->privateuint4;
   if (count == 0)
@@ -419,7 +419,7 @@ rdataset_next(dns_rdataset_t *rdataset) {
   
   rdataset->private5 = (char*)rdataset->private3 + offset;
   
-  UNLOCK(rdataset->private1);
+  LB_UNLOCK(rdataset->private1);
 
 	return (ISC_R_SUCCESS);
 }
@@ -432,7 +432,7 @@ rdataset_current(dns_rdataset_t *rdataset, dns_rdata_t *rdata) {
 	unsigned int flags = 0;
   
 //   printf("KKK\n");
-  RDLOCK(rdataset->private1);
+  LB_RDLOCK(rdataset->private1);
 //   printf("LLL\n");
   raw = rdataset->private5;
 
@@ -457,15 +457,15 @@ rdataset_current(dns_rdataset_t *rdataset, dns_rdata_t *rdata) {
 	dns_rdata_fromregion(rdata, rdataset->rdclass, rdataset->type, &r);
 	rdata->flags |= flags;
   
-  UNLOCK(rdataset->private1);
+  LB_UNLOCK(rdataset->private1);
 }
 
 static void
 rdataset_clone(dns_rdataset_t *source, dns_rdataset_t *target) {
   
   // FIXME: possible deadlock?
-  RDLOCK(source->private1);
-  WRLOCK(target->private1);
+  LB_RDLOCK(source->private1);
+  LB_WRLOCK(target->private1);
 	
   *target = *source;
 
@@ -475,8 +475,8 @@ rdataset_clone(dns_rdataset_t *source, dns_rdataset_t *target) {
 	target->privateuint4 = 0;
 	target->private5 = NULL;
   
-  UNLOCK(target->private1);
-  UNLOCK(source->private1);
+  LB_UNLOCK(target->private1);
+  LB_UNLOCK(source->private1);
 }
 
 static unsigned int
@@ -484,13 +484,13 @@ rdataset_count(dns_rdataset_t *rdataset) {
 	unsigned char *raw;
 	unsigned int count;
   
-  RDLOCK(rdataset->private1);
+  LB_RDLOCK(rdataset->private1);
 
   raw = rdataset->private3;
   
 	count = raw[0] * 256 + raw[1];
   
-  UNLOCK(rdataset->private1);
+  LB_UNLOCK(rdataset->private1);
 
 	return (count);
 }
@@ -566,7 +566,7 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
   assert(addr_stats);
   
 //   printf("AAA\n");
-  WRLOCK(rdataset->private1);
+  LB_WRLOCK(rdataset->private1);
 //   printf("BBB\n");
   
   base = raw = rdataset->private3;
@@ -597,7 +597,7 @@ dns_rdataslab_sort_fromrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
   rdataset->privateuint4 = 0;
   rdataset->private5 = NULL;
   
-  UNLOCK(rdataset->private1);
+  LB_UNLOCK(rdataset->private1);
 
 //   free(x);
   return result;
@@ -730,12 +730,12 @@ dns_rdataslab_transformrdataset(dns_rdataset_t *rdataset, ns_profiler_a_node_t *
   rdataset->privateuint4 = 0;
   rdataset->private5 = NULL;
   
-#ifdef LOCKING
+#ifdef LB_LOCKING
   /* 
    * use private1 as rwlock
    */
   rdataset->private1 = malloc(sizeof(pthread_rwlock_t));
-  INIT_LOCK( rdataset->private1);
+  LB_INIT_LOCK( rdataset->private1);
 #endif
   
  free_rdatas:
