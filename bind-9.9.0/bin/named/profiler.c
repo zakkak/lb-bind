@@ -7,6 +7,7 @@
  */
 
 
+#include <pthread.h>
 #include <stdlib.h>
 
 #include <named/globals.h>
@@ -38,6 +39,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -57,6 +59,7 @@
 #define EPRINT(...) do{ fprintf(stderr, "\033[1;31m"); MYPRINT(__VA_ARGS__); fprintf(stderr, "\033[m"); exit(1); }while(0)
           
 #define DEBUG 0
+#define LB_STATS 1
 
 #if DEBUG
 #define DPRINT MYPRINT
@@ -65,6 +68,7 @@
 #endif
 
 ///////////////////////////////// RDTSC ///////////////////////////////////////
+// #if LB_STATS
 #ifdef __GNUC__
 #define VOLATILE __volatile__
 #define ASM __asm__
@@ -87,6 +91,7 @@ typedef union
 #define CPUID(x) \
 	 ASM VOLATILE ("cpuid" : "=a" (x) : "0" (x) : "bx", "cx", "dx" )
 
+// #endif
 ///////////////////////////////////////////////////////////////////////////////
 
 // typedef struct ht_node_v {
@@ -115,10 +120,12 @@ typedef struct node {
 
 node_t *list_g;
 
-#if 1 //cond_timedwait
+#if 0 //cond_timedwait
 pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
 #endif
+
+#define LB_MWSTATS 0
 
 static inline void mywait(int timeInSec)
 {
@@ -127,8 +134,14 @@ static inline void mywait(int timeInSec)
 #else
   struct timeval timeToWait;
 #endif
+  
+#if LB_MWSTATS
+  tsc_counter tsc_start, tsc_end;
+  unsigned int counter=0;
+  unsigned long long int yielded=0;
+#endif
+
   struct timeval now;
-  int rt;
 
   if(timeInSec<1)
     return;
@@ -145,9 +158,16 @@ static inline void mywait(int timeInSec)
   timeToWait.tv_nsec = now.tv_usec*1000;
   
   pthread_mutex_lock(&fakeMutex);
-  rt = pthread_cond_timedwait(&fakeCond, &fakeMutex, &timeToWait);
+#if LB_MWSTATS
+  RDTSC(tsc_start);
+#endif
+  pthread_cond_timedwait(&fakeCond, &fakeMutex, &timeToWait);
+#if LB_MWSTATS
+  RDTSC(tsc_end);
+  fprintf(stderr, "Waited %lf ms\n", (float)(tsc_end.int64-tsc_start.int64)/3200000.0);
+#endif
   pthread_mutex_unlock(&fakeMutex);
-#elif 1 //busy_spin
+#elif 0 //busy_spin
   timeToWait.tv_usec = now.tv_usec;
   
   gettimeofday(&now,NULL);
@@ -157,12 +177,31 @@ static inline void mywait(int timeInSec)
 #else
   timeToWait.tv_usec = now.tv_usec;
 
+#if LB_MWSTATS
+  RDTSC(tsc_start);
+#endif
   pthread_yield();
+#if LB_MWSTATS
+  RDTSC(tsc_end);
+  yielded+=tsc_end.int64-tsc_start.int64;
+#endif
   gettimeofday(&now,NULL);
   while( timeToWait.tv_sec > now.tv_sec || ((timeToWait.tv_sec == now.tv_sec) && timeToWait.tv_usec > now.tv_usec)) {
+#if LB_MWSTATS
+    counter++;
+    RDTSC(tsc_start);
+#endif
     pthread_yield();
+#if LB_MWSTATS
+    RDTSC(tsc_end);
+    yielded+=tsc_end.int64-tsc_start.int64;
+#endif
     gettimeofday(&now,NULL);
   }
+  
+#if LB_MWSTATS
+  fprintf(stderr, "AVG Yielded ticks=%llu times tried=%u\n", yielded/counter, counter);
+#endif
 #endif
 }
 
@@ -332,18 +371,19 @@ static inline void ns_profiler_poll_workers(node_t * cur)
     //DPRINT("done\n");
     response = sendMessage(message, ip2, sockfd);
     if ( !response || parse_response(response, &(cur->addr_stats[i]))) {
-      if (response)
-    //fprintf(stderr, "Checksum Error in worker's message\n");
-    DPRINT("Checksum Error in worker's message\n");
-    else
-      //fprintf(stderr, "Socket Closed\n");
-      DPRINT("Socket Closed\n");
+      if (response) {
+        //fprintf(stderr, "Checksum Error in worker's message\n");
+        DPRINT("Checksum Error in worker's message\n");
+      } else {
+        //fprintf(stderr, "Socket Closed\n");
+        DPRINT("Socket Closed\n");
+      }
       // handle this somehow? The worker is down put it last in the list ;)
       cur->addr_stats[i].cpu_load = 255.0f;
       cur->addr_stats[i].io_load = 255.0f;
       cur->addr_stats[i].net_load = 255.0f;
     }
-    if(response != NULL)
+    if(response)
       free(response);
     //printf("%s\n",message);
     DPRINT("\t%s's Stats\n", ip2);
@@ -382,15 +422,23 @@ static void ns_profiler_update_addrs()
 	  EPRINT("You must set TTL ( bash$ TTL=0 named )");
   
   int up_interval = atoi(ttl);
-
+#if LB_STATS
+  tsc_counter tsc_start, tsc_end;
+#endif
+  
   while (1) {
+#if LB_STATS
+    RDTSC(tsc_start);
+#endif
     mywait(up_interval);
-    DPRINT("Here we go again!!!\n");
+#if LB_STATS
+    RDTSC(tsc_end);
+    fprintf(stderr, "wait ticks=%llu\n", tsc_end.int64-tsc_start.int64);
+#endif
     current = list_g;
 
-#if DEBUG
-    tsc_counter tsc_start, tsc_end;
-	RDTSC(tsc_start);
+#if LB_STATS
+    RDTSC(tsc_start);
 #endif
 
     while (current) {
@@ -412,10 +460,10 @@ static void ns_profiler_update_addrs()
       current = current->next;
     }
 
-#if DEBUG
-	RDTSC(tsc_end);
+#if LB_STATS
+    RDTSC(tsc_end);
+    fprintf(stderr, "Polling ticks=%llu\n", tsc_end.int64-tsc_start.int64);
 #endif
-	DPRINT("Polling ticks=%llu\n", tsc_end.int64-tsc_start.int64);
 
   }
 }
@@ -497,12 +545,14 @@ static isc_threadresult_t ns_profiler_thread()
               if (DNS_DB_VALID(zone->db)) {
                 dbiterator = NULL;
                 result = dns_db_createiterator(zone->db, 0, &dbiterator);
-                if (result != ISC_R_SUCCESS)
+                if (result != ISC_R_SUCCESS) {
                   if (result == ISC_R_NOTIMPLEMENTED) {
                     DPRINT("Builtin probably, skipping iterator\n");
                     continue;
-                  } else
+                  } else {
                     EPRINT("Couldn't create Iterator\n");
+                  }
+                }
 
                 for (result = dns_dbiterator_first(dbiterator);
                      result == ISC_R_SUCCESS; result = dns_dbiterator_next(dbiterator)) {
