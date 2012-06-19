@@ -59,7 +59,7 @@
 #define EPRINT(...) do{ fprintf(stderr, "\033[1;31m"); MYPRINT(__VA_ARGS__); fprintf(stderr, "\033[m"); exit(1); }while(0)
           
 #define DEBUG 0
-#define LB_STATS 1
+#define LB_STATS 0
 
 #if DEBUG
 #define DPRINT MYPRINT
