@@ -19,6 +19,7 @@
 
 /*! \file */
 
+#include <pthread.h>
 #include <config.h>
 
 #include <stdlib.h>

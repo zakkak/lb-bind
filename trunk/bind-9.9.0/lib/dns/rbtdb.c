@@ -23,6 +23,7 @@
  * Principal Author: Bob Halley
  */
 
+#include <pthread.h>
 #include <config.h>
 
 /* #define inline */
