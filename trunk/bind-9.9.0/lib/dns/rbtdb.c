@@ -65,13 +65,18 @@
 #include <dns/zone.h>
 #include <dns/zonekey.h>
 
-// #define LBBIND
+// #define LB_LOCKING
 
-#ifdef LBBIND
+#ifdef LB_LOCKING
 #define LB_RDLOCK(x) pthread_rwlock_rdlock(x)
 #define LB_WRLOCK(x) pthread_rwlock_wrlock(x)
 #define LB_UNLOCK(x) pthread_rwlock_unlock(x)
 #define LB_INIT_LOCK(x) pthread_rwlock_init(x, NULL)
+#else
+#define LB_RDLOCK(x) 
+#define LB_WRLOCK(x) 
+#define LB_UNLOCK(x) 
+#define LB_INIT_LOCK(x) 
 #endif
 
 #ifdef DNS_RBTDB_VERSION64
@@ -2805,7 +2810,7 @@ bind_rdataset(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 	rdataset->privateuint4 = 0;
 	rdataset->private5 = NULL;
   
-#ifdef LBBIND
+#ifdef LB_LOCKING
   /* 
    * ZAKKAK
    * use private1 as rwlock
@@ -8009,7 +8014,7 @@ rdataset_count(dns_rdataset_t *rdataset) {
 
 	return (count);
 }
-#else
+#else // LBBIND
 // ZAKKAK
 // changed to use the offsets
 static isc_result_t
