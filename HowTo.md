@@ -1,0 +1,56 @@
+# Introduction #
+
+How to download, configure, compile, install and run lb-bind
+
+
+# Details #
+
+## Requires ##
+
+  * libssl-dev
+
+## Download ##
+```
+svn checkout http://lb-bind.googlecode.com/svn/trunk/bind-9.9.0 lb-bind
+```
+
+## Configure ##
+```
+configure --without-openssl --enable-fixed-rrset --disable-ipv6 --sysconfdir=/etc/bind --enable-threads
+```
+
+## Compile ##
+```
+make
+```
+
+## Install ##
+```
+sudo make install
+```
+
+## Setup ##
+
+In `trunk/Bind_dependencies` you will find `etc_bind` (copy it to `/etc/bind`)
+Finally inside /etc/bind run
+```
+./set_ip.sh <your IP>
+```
+
+
+### Alternatively ###
+Follow [this guide](http://ubuntuforums.org/showthread.php?t=236093)
+
+omitting this
+```
+forwarders {
+     # Replace the address below with the address of your provider's DNS server
+     123.123.123.123;
+};
+```
+
+## Run ##
+Execute
+```
+named -4 -c /etc/bind/named.conf -n <number of cpus>
+```

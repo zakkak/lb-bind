@@ -1,0 +1,17 @@
+## Dependencies ##
+  * bind9utils
+  * lbbind-dev
+  * libssl-dev
+  * libcap-dev
+  * linkrb5-dev
+  * libxml2-dev
+
+## COMPILE / INSTALL ##
+```
+./configure; make; sudo make install
+```
+
+## RUN ##
+```
+dnsperf -d testfile -n <times_to_repeat_testfile> -s <server_ip> -c <number_of_clients_to_acts_as>
+```
